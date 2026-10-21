@@ -8,6 +8,7 @@ const initialState: AuthActionState = {};
 
 export function SignInForm() {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
+  const [oauthState, oauthAction, oauthPending] = useActionState(signInWithProviderAction, initialState);
 
   return (
     <form action={formAction} className="auth-form">
@@ -15,7 +16,8 @@ export function SignInForm() {
       <input id="email" name="email" type="email" autoComplete="email" required maxLength={254} />
       <label htmlFor="password">Mot de passe</label>
       <input id="password" name="password" type="password" autoComplete="current-password" required />
-      <div className="auth-providers"><button className="button" type="submit" formAction={signInWithProviderAction} name="provider" value="google">Continuer avec Google</button><button className="button" type="submit" formAction={signInWithProviderAction} name="provider" value="apple">Continuer avec Apple</button></div>
+      <div className="auth-providers"><button className="button" type="submit" formAction={oauthAction} name="provider" value="google" disabled={oauthPending}>Continuer avec Google</button><button className="button" type="submit" formAction={oauthAction} name="provider" value="apple" disabled={oauthPending}>Continuer avec Apple</button></div>
+      {oauthState.error && <p className="auth-error" role="alert">{oauthState.error}</p>}
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : "Se connecter"}</button>
       <p className="auth-switch">Vous n’avez pas encore de compte ? <Link href="/auth/sign-up">Créer un compte</Link></p>

@@ -95,7 +95,7 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
   redirect("/tableau-de-bord");
 }
 
-export async function signInWithProviderAction(formData: FormData): Promise<AuthActionState> {
+export async function signInWithProviderAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
   const provider = z.enum(["google", "apple"]).safeParse(String(formData.get("provider") ?? ""));
   if (!provider.success) return { error: "Fournisseur de connexion invalide." };
   let supabase;
