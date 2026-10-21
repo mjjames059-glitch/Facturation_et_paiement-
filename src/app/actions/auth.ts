@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -67,10 +68,34 @@ export async function signUpAction(_previousState: AuthActionState, formData: Fo
   }
 
   if (data.session) {
+    (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
     redirect("/tableau-de-bord");
   }
 
-  return { success: "Compte créé. Consultez votre boîte e-mail pour confirmer l’adresse et vous connecter." };
+  redirect("/auth/confirmation");
+}
+
+const confirmationEmailSchema = z.email().max(254);
+
+export async function resendConfirmationAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const email = confirmationEmailSchema.safeParse(String(formData.get("email") ?? "").trim().toLowerCase());
+  if (!email.success) return { error: "Saisissez une adresse e-mail valide." };
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.data,
+      options: { emailRedirectTo: new URL("/auth/callback", appUrl).toString() },
+    });
+    if (error) return { error: "Impossible d’envoyer un lien pour le moment. Réessayez dans quelques minutes." };
+  } catch {
+    return { error: "Impossible d’envoyer un lien pour le moment. Réessayez dans quelques minutes." };
+  }
+
+  // Keep the success response generic so this form cannot reveal whether an account exists.
+  return { success: "Si cette adresse attend une confirmation, un nouveau lien vient d’être envoyé. Pensez aussi à vérifier vos courriers indésirables." };
 }
 
 const signInSchema = z.object({ email: z.email().max(254), password: z.string().min(1).max(72) });
@@ -92,6 +117,7 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
 
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: "Adresse e-mail ou mot de passe incorrect." };
+  (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
   redirect("/tableau-de-bord");
 }
 

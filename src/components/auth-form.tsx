@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { signInAction, signInWithProviderAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
+import { resendConfirmationAction, signInAction, signInWithProviderAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
 
 const initialState: AuthActionState = {};
 
@@ -64,6 +64,24 @@ export function SignUpForm() {
       {state.success && <p className="message" role="status">{state.success}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Création…" : "Créer mon compte"}</button>
       <p className="auth-switch">Vous avez déjà un compte ? <Link href="/auth/sign-in">Se connecter</Link></p>
+    </form>
+  );
+}
+
+export function ConfirmationResendForm() {
+  const [state, formAction, pending] = useActionState(resendConfirmationAction, initialState);
+
+  return (
+    <form action={formAction} className="auth-form">
+      <div className="signin-field">
+        <label htmlFor="confirmation-email">Adresse e-mail utilisée pour l’inscription</label>
+        <input id="confirmation-email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} />
+      </div>
+      {state.error && <p className="auth-error" role="alert">{state.error}</p>}
+      {state.success && <p className="message" role="status">{state.success}</p>}
+      <button className="button primary auth-submit" disabled={pending}>
+        {pending ? "Envoi en cours…" : "Renvoyer le lien de confirmation"}
+      </button>
     </form>
   );
 }

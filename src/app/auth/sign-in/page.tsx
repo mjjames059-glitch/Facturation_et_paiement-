@@ -1,5 +1,12 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { Suspense } from "react";
 import { SignInForm } from "@/components/auth-form";
+
+async function SignInGreeting() {
+  const hasSignedInBefore = (await cookies()).has("facturo_seen_login");
+  return <p className="eyebrow">{hasSignedInBefore ? "Content de vous revoir" : "Bienvenue sur Facturo"}</p>;
+}
 
 export default function SignInPage() {
   return (
@@ -13,7 +20,7 @@ export default function SignInPage() {
           <ul><li>Créez et partagez vos factures</li><li>Suivez vos paiements en un coup d’œil</li><li>Gardez vos clients et produits à portée de main</li></ul>
         </section>
         <section className="auth-card signin-card">
-          <p className="eyebrow">Content de vous revoir</p>
+          <Suspense fallback={<p className="eyebrow">Bienvenue sur Facturo</p>}><SignInGreeting /></Suspense>
           <h2>Connexion</h2>
           <p className="lead">Connectez-vous à votre espace Facturo.</p>
           <SignInForm />
