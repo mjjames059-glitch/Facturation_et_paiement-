@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { resendConfirmationAction, signInAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
+import { completeOAuthRegistrationAction, resendConfirmationAction, signInAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
 import { acceptTeamInvitationAction, type TeamActionState } from "@/app/actions/team";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -54,6 +54,8 @@ export function SignUpForm() {
 
   return (
     <form action={formAction} className="auth-form">
+      <GoogleSignUpButton />
+      <div className="signin-divider"><span>ou créez un compte avec votre e-mail</span></div>
       <div className="grid-two">
         <div><label htmlFor="display-name">Votre nom</label><input id="display-name" name="display_name" autoComplete="name" maxLength={100} /></div>
         <div><label htmlFor="company-name">Nom de l’entreprise</label><input id="company-name" name="company_name" placeholder="Ex. Traiteur Mama Zita" required minLength={2} maxLength={120} /></div>
@@ -90,6 +92,72 @@ export function SignUpForm() {
       <p className="auth-switch">Vous avez déjà un compte ? <Link href="/auth/sign-in">Se connecter</Link></p>
     </form>
   );
+}
+
+function GoogleSignUpButton() {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function continueWithGoogle() {
+    setPending(true);
+    setError(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback?mode=signup` },
+      });
+      if (oauthError) throw oauthError;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Connexion Google indisponible. Réessayez.");
+      setPending(false);
+    }
+  }
+
+  return <div>
+    <button className="button provider-button" type="button" onClick={() => void continueWithGoogle()} disabled={pending}>
+      <span className="provider-mark google-mark">G</span>{pending ? "Connexion…" : "Utiliser Google pour mes informations personnelles"}
+    </button>
+    <p className="field-hint">Le nom et l’adresse e-mail viennent de Google. Vous saisirez les informations de votre entreprise ensuite.</p>
+    {error && <p className="auth-error" role="alert">{error}</p>}
+  </div>;
+}
+
+export function GoogleCompanyRegistrationForm({ email, displayName }: { email: string; displayName: string }) {
+  const [state, formAction, pending] = useActionState(completeOAuthRegistrationAction, initialState);
+  const [vatStatus, setVatStatus] = useState("unknown");
+
+  return <form action={formAction} className="auth-form">
+    <div className="grid-two">
+      <div><label htmlFor="google-display-name">Votre nom</label><input id="google-display-name" name="display_name" autoComplete="name" defaultValue={displayName} required minLength={2} maxLength={100} /></div>
+      <div><label htmlFor="google-email">Adresse e-mail Google</label><input id="google-email" type="email" value={email} readOnly /></div>
+    </div>
+    <p className="field-hint">Ces informations personnelles viennent de votre connexion Google. Complétez séparément les renseignements de votre entreprise.</p>
+    <div><label htmlFor="google-company-name">Nom de l’entreprise</label><input id="google-company-name" name="company_name" required minLength={2} maxLength={120} /></div>
+    <label htmlFor="google-sector">Secteur d’activité</label>
+    <select id="google-sector" name="sector" defaultValue="Autre">
+      <option>Restauration et alimentation</option><option>Services et conseil</option><option>Commerce et distribution</option><option>BTP et construction</option><option>Transport et logistique</option><option>Éducation</option><option>Autre</option>
+    </select>
+    <fieldset className="auth-fieldset">
+      <legend>Vos clients sont</legend>
+      <div className="dishes choices">
+        <label><input type="checkbox" name="served_client_types" value="b2b" defaultChecked /> Des entreprises</label>
+        <label><input type="checkbox" name="served_client_types" value="b2a" defaultChecked /> Des administrations</label>
+        <label><input type="checkbox" name="served_client_types" value="b2c" defaultChecked /> Des particuliers</label>
+      </div>
+    </fieldset>
+    <fieldset className="auth-fieldset">
+      <legend>Êtes-vous assujetti à la TVA ?</legend>
+      <div className="dishes">
+        {[ ["no", "Non"], ["yes", "Oui"], ["unknown", "Je ne sais pas"] ].map(([value, label]) => <label className={`choice-pill${vatStatus === value ? " active" : ""}`} key={value}>
+          <input type="radio" name="vat_status" value={value} checked={vatStatus === value} onChange={() => setVatStatus(value)} />{label}
+        </label>)}
+      </div>
+      {vatStatus === "yes" && <label className="waitlist-choice"><input type="checkbox" name="join_waitlist" /> Rejoindre la liste d’attente DGI</label>}
+    </fieldset>
+    {state.error && <p className="auth-error" role="alert">{state.error}</p>}
+    <button className="button primary auth-submit" disabled={pending}>{pending ? "Finalisation…" : "Créer mon espace Facturo"}</button>
+  </form>;
 }
 
 export function ConfirmationResendForm() {

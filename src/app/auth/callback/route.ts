@@ -49,9 +49,11 @@ export async function GET(request: NextRequest) {
       .select("company_id")
       .eq("user_id", data.user.id)
       .maybeSingle();
-    const destination = profileError || !profile?.company_id
+    const destination = profileError
       ? "/auth/confirmation?status=profile"
-      : "/tableau-de-bord";
+      : profile?.company_id
+        ? "/tableau-de-bord"
+        : "/auth/sign-up?mode=google";
     const response = NextResponse.redirect(new URL(destination, request.url));
 
     for (const { name, value, options } of cookiesToSet) {

@@ -100,6 +100,57 @@ export async function resendConfirmationAction(_previousState: AuthActionState, 
 }
 
 const signInSchema = z.object({ email: z.email().max(254), password: z.string().min(1).max(72) });
+const oauthRegistrationSchema = z.object({
+  displayName: z.string().trim().min(2).max(100),
+  companyName: z.string().trim().min(2).max(120),
+  sector: z.string().trim().min(1).max(100),
+  servedClientTypes: z.array(z.enum(clientTypes)).min(1),
+  vatStatus: z.enum(["yes", "no", "unknown"]),
+  joinWaitlist: z.boolean(),
+});
+
+export async function completeOAuthRegistrationAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const parsed = oauthRegistrationSchema.safeParse({
+    displayName: String(formData.get("display_name") ?? "").trim(),
+    companyName: String(formData.get("company_name") ?? "").trim(),
+    sector: String(formData.get("sector") ?? "").trim(),
+    servedClientTypes: formData.getAll("served_client_types").map(String),
+    vatStatus: String(formData.get("vat_status") ?? ""),
+    joinWaitlist: formData.get("join_waitlist") === "on",
+  });
+  if (!parsed.success) return { error: "Complétez votre nom, votre entreprise et au moins un type de client." };
+
+  let supabase;
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return { error: "La connexion à Facturo est indisponible. Réessayez dans un instant." };
+  }
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) redirect("/auth/sign-in");
+
+  const { data: existingProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select("company_id")
+    .eq("user_id", authData.user.id)
+    .maybeSingle();
+  if (profileError) return { error: "Impossible de vérifier le profil. Rechargez la page ou contactez le support." };
+  if (existingProfile?.company_id) redirect("/tableau-de-bord");
+
+  const { error } = await supabase.rpc("complete_oauth_registration", {
+    p_display_name: parsed.data.displayName,
+    p_company_name: parsed.data.companyName,
+    p_sector: parsed.data.sector,
+    p_served_client_types: parsed.data.servedClientTypes,
+    p_vat_status: parsed.data.vatStatus,
+    p_join_waitlist: parsed.data.joinWaitlist,
+  });
+  if (error) return { error: "Impossible de terminer l’inscription. Vérifiez que les migrations Facturo sont appliquées dans Supabase." };
+
+  (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
+  redirect("/tableau-de-bord");
+}
 
 export async function signInAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
   const parsed = signInSchema.safeParse({
