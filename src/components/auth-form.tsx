@@ -2,23 +2,40 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { resendConfirmationAction, signInAction, signInWithFacebookAction, signInWithGoogleAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
+import { resendConfirmationAction, signInAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
 import { acceptTeamInvitationAction, type TeamActionState } from "@/app/actions/team";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const initialState: AuthActionState = {};
 
 export function SignInForm() {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
-  const [googleState, googleAction, googlePending] = useActionState(signInWithGoogleAction, initialState);
-  const [facebookState, facebookAction, facebookPending] = useActionState(signInWithFacebookAction, initialState);
+  const [oauthPending, setOauthPending] = useState<"google" | "facebook" | null>(null);
+  const [oauthError, setOauthError] = useState<string | null>(null);
+
+  async function signInWithProvider(provider: "google" | "facebook") {
+    setOauthPending(provider);
+    setOauthError(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setOauthError(error instanceof Error ? error.message : "La connexion OAuth n’a pas pu démarrer.");
+      setOauthPending(null);
+    }
+  }
 
   return (
     <div className="auth-form signin-form">
       <div className="auth-providers">
-        <form action={googleAction}><button className="button provider-button" type="submit" disabled={googlePending}><span className="provider-mark google-mark">G</span>{googlePending ? "Connexion…" : "Continuer avec Google"}</button></form>
-        <form action={facebookAction}><button className="button provider-button" type="submit" disabled={facebookPending}><span className="provider-mark facebook-mark">f</span>{facebookPending ? "Connexion…" : "Continuer avec Facebook"}</button></form>
+        <button className="button provider-button" type="button" onClick={() => void signInWithProvider("google")} disabled={oauthPending !== null}><span className="provider-mark google-mark">G</span>{oauthPending === "google" ? "Connexion…" : "Continuer avec Google"}</button>
+        <button className="button provider-button" type="button" onClick={() => void signInWithProvider("facebook")} disabled={oauthPending !== null}><span className="provider-mark facebook-mark">f</span>{oauthPending === "facebook" ? "Connexion…" : "Continuer avec Facebook"}</button>
       </div>
-      {(googleState.error || facebookState.error) && <p className="auth-error" role="alert">{googleState.error ?? facebookState.error}</p>}
+      {oauthError && <p className="auth-error" role="alert">{oauthError}</p>}
       <div className="signin-divider"><span>ou avec votre e-mail</span></div>
       <form action={formAction}>
         <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
