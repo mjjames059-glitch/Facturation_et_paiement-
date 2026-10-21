@@ -2,11 +2,19 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
+function oauthFailure(request: NextRequest, reason: string) {
+  const url = new URL("/auth/confirmation", request.url);
+  url.searchParams.set("status", "oauth");
+  url.searchParams.set("reason", reason);
+  return NextResponse.redirect(url);
+}
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  if (!code || request.nextUrl.searchParams.has("error")) {
-    return NextResponse.redirect(new URL("/auth/confirmation?status=oauth", request.url));
+  if (request.nextUrl.searchParams.has("error")) {
+    return oauthFailure(request, "provider");
   }
+  if (!code) return oauthFailure(request, "missing_code");
 
   try {
     const { url, publishableKey } = getSupabasePublicEnv();
@@ -24,9 +32,17 @@ export async function GET(request: NextRequest) {
     });
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error || !data.user) {
-      return NextResponse.redirect(new URL("/auth/confirmation?status=oauth", request.url));
+    if (error) {
+      const normalizedError = `${error.code ?? ""} ${error.message}`.toLowerCase();
+      const reason = normalizedError.includes("verifier") || normalizedError.includes("flow state")
+        ? "pkce"
+        : normalizedError.includes("expired") || normalizedError.includes("invalid grant")
+          ? "expired_code"
+          : "exchange";
+      console.error("Facturo OAuth callback exchange failed", { code: error.code, reason });
+      return oauthFailure(request, reason);
     }
+    if (!data.user) return oauthFailure(request, "exchange");
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -50,6 +66,7 @@ export async function GET(request: NextRequest) {
     });
     return response;
   } catch {
-    return NextResponse.redirect(new URL("/auth/confirmation?status=oauth", request.url));
+    console.error("Facturo OAuth callback failed before session completion");
+    return oauthFailure(request, "server");
   }
 }

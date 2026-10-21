@@ -3,15 +3,26 @@ import { Suspense } from "react";
 import { ConfirmationResendForm } from "@/components/auth-form";
 
 type PageProps = {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; reason?: string }>;
 };
 
 async function ConfirmationContent({ searchParams }: PageProps) {
-  const { status } = await searchParams;
+  const { status, reason } = await searchParams;
   const linkProblem = status === "error";
   const oauthProblem = status === "oauth";
   const profileProblem = status === "profile";
   const hasProblem = linkProblem || oauthProblem || profileProblem;
+  const oauthMessage = reason === "provider"
+    ? "Google a refusé ou interrompu la demande. Recommencez et acceptez la connexion."
+    : reason === "missing_code"
+      ? "Le retour de Google ne contenait pas le code de connexion attendu. Vérifiez l’URL de retour autorisée dans Supabase."
+      : reason === "pkce"
+        ? "Le navigateur n’a pas conservé l’état temporaire de connexion. Recommencez dans le même navigateur, sur le même domaine Facturo."
+        : reason === "expired_code"
+          ? "Le code de connexion a expiré ou a déjà servi. Recommencez le parcours Google depuis Facturo."
+          : reason === "server"
+            ? "Le serveur Facturo n’a pas pu terminer le retour OAuth. Consultez les journaux de la fonction /auth/callback dans Vercel."
+            : "Supabase n’a pas pu échanger le code Google. Vérifiez que les variables Vercel ciblent le même projet Supabase que celui configuré pour Google.";
 
   return (
     <main className="auth-shell signin-shell">
@@ -24,7 +35,7 @@ async function ConfirmationContent({ searchParams }: PageProps) {
           {linkProblem
             ? "Le lien a peut-être expiré ou a déjà été utilisé. Vous pouvez demander un nouvel e-mail de confirmation ci-dessous."
             : oauthProblem
-              ? "L’échange avec le fournisseur a échoué. Vérifiez que Google est activé dans le projet Supabase utilisé par Facturo et que son URL de retour est autorisée."
+              ? oauthMessage
               : profileProblem
                 ? "Google a connecté votre compte, mais Facturo ne trouve pas son profil d’entreprise dans ce projet Supabase. Vérifiez que les migrations Facturo y sont appliquées."
                 : "Nous vous avons envoyé un lien pour confirmer votre adresse et activer votre compte Facturo."}
