@@ -96,7 +96,7 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
 }
 
 export async function signInWithProviderAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
-  const provider = z.enum(["google", "apple"]).safeParse(String(formData.get("provider") ?? ""));
+  const provider = z.enum(["google", "facebook"]).safeParse(String(formData.get("provider") ?? ""));
   if (!provider.success) return { error: "Fournisseur de connexion invalide." };
   let supabase;
   try { supabase = await createSupabaseServerClient(); }

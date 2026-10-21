@@ -11,12 +11,11 @@ export function SignInForm() {
   const [oauthState, oauthAction, oauthPending] = useActionState(signInWithProviderAction, initialState);
 
   return (
-    <form action={formAction} className="auth-form">
-      <label htmlFor="email">Adresse e-mail</label>
-      <input id="email" name="email" type="email" autoComplete="email" required maxLength={254} />
-      <label htmlFor="password">Mot de passe</label>
-      <input id="password" name="password" type="password" autoComplete="current-password" required />
-      <div className="auth-providers"><button className="button" type="submit" formAction={oauthAction} name="provider" value="google" disabled={oauthPending}>Continuer avec Google</button><button className="button" type="submit" formAction={oauthAction} name="provider" value="apple" disabled={oauthPending}>Continuer avec Apple</button></div>
+    <form action={formAction} className="auth-form signin-form">
+      <div className="auth-providers"><button className="button provider-button" type="submit" formAction={oauthAction} formNoValidate name="provider" value="google" disabled={oauthPending}><span className="provider-mark google-mark">G</span>Continuer avec Google</button><button className="button provider-button" type="submit" formAction={oauthAction} formNoValidate name="provider" value="facebook" disabled={oauthPending}><span className="provider-mark facebook-mark">f</span>Continuer avec Facebook</button></div>
+      <div className="signin-divider"><span>ou avec votre e-mail</span></div>
+      <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
+      <div className="signin-field"><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required /></div>
       {oauthState.error && <p className="auth-error" role="alert">{oauthState.error}</p>}
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : "Se connecter"}</button>
