@@ -7,10 +7,16 @@ export async function requireAuthenticatedCompany() {
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) redirect("/auth/sign-in");
+  if (error || !data.user) {
+    console.error("Facturo dashboard auth check failed", { code: error?.code ?? "no_user" });
+    redirect("/auth/confirmation?status=session");
+  }
 
-  const { data: profile } = await supabase.from("profiles").select("company_id, role, display_name, phone").eq("user_id", data.user.id).maybeSingle();
-  if (!profile?.company_id) redirect("/auth/sign-in");
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("company_id, role, display_name, phone").eq("user_id", data.user.id).maybeSingle();
+  if (profileError || !profile?.company_id) {
+    console.error("Facturo dashboard profile check failed", { code: profileError?.code ?? "no_profile" });
+    redirect("/auth/confirmation?status=profile");
+  }
 
   return { supabase, user: data.user, companyId: profile.company_id, role: profile.role, profile };
 }

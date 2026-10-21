@@ -11,7 +11,8 @@ async function ConfirmationContent({ searchParams }: PageProps) {
   const linkProblem = status === "error";
   const oauthProblem = status === "oauth";
   const profileProblem = status === "profile";
-  const hasProblem = linkProblem || oauthProblem || profileProblem;
+  const sessionProblem = status === "session";
+  const hasProblem = linkProblem || oauthProblem || profileProblem || sessionProblem;
   const oauthMessage = reason === "provider"
     ? "Google a refusé ou interrompu la demande. Recommencez et acceptez la connexion."
     : reason === "missing_code"
@@ -30,12 +31,14 @@ async function ConfirmationContent({ searchParams }: PageProps) {
         <Link href="/" className="brand">Facturo<small>Facturation et suivi des paiements</small></Link>
         <div className="confirmation-icon" aria-hidden="true">{hasProblem ? "!" : "✉"}</div>
         <p className="eyebrow">{hasProblem ? "Connexion à terminer" : "Dernière étape"}</p>
-        <h1>{linkProblem ? "Ce lien ne fonctionne plus" : oauthProblem ? "La connexion Google/Facebook n’a pas abouti" : profileProblem ? "Compte connecté, profil Facturo manquant" : "Vérifiez votre boîte mail"}</h1>
+        <h1>{linkProblem ? "Ce lien ne fonctionne plus" : oauthProblem ? "La connexion Google/Facebook n’a pas abouti" : sessionProblem ? "Session non retrouvée après connexion" : profileProblem ? "Compte connecté, profil Facturo manquant" : "Vérifiez votre boîte mail"}</h1>
         <p className="lead">
           {linkProblem
             ? "Le lien a peut-être expiré ou a déjà été utilisé. Vous pouvez demander un nouvel e-mail de confirmation ci-dessous."
             : oauthProblem
               ? oauthMessage
+              : sessionProblem
+                ? "Le retour Google a atteint le tableau de bord, mais le serveur ne retrouve pas la session. Vérifiez que l’adresse du site est identique du début à la fin de la connexion. Si le problème continue, consultez les journaux Vercel pour l’erreur du contrôle de session."
               : profileProblem
                 ? "Google a connecté votre compte, mais Facturo ne trouve pas son profil d’entreprise dans ce projet Supabase. Vérifiez que les migrations Facturo y sont appliquées."
                 : "Nous vous avons envoyé un lien pour confirmer votre adresse et activer votre compte Facturo."}
