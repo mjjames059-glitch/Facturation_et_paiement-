@@ -23,6 +23,44 @@ const companySchema = z.object({
   nif: z.string().trim().max(80),
 });
 
+const personalProfileSchema = z.object({
+  displayName: z.string().trim().min(2).max(100),
+  phone: z.string().trim().max(40),
+});
+
+export async function updatePersonalProfileAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
+  const parsed = personalProfileSchema.safeParse({
+    displayName: String(formData.get("display_name") ?? ""),
+    phone: String(formData.get("phone") ?? ""),
+  });
+  if (!parsed.success) return { error: "Le nom doit contenir au moins 2 caractères. Vérifiez aussi le téléphone." };
+
+  const context = await currentCompany();
+  if (!context.companyId) return { error: "Connectez-vous avant de modifier votre profil." };
+  const { data: userData } = await context.supabase.auth.getUser();
+  if (!userData.user) return { error: "Votre session a expiré. Reconnectez-vous puis réessayez." };
+  const { error } = await context.supabase.from("profiles").update({
+    display_name: parsed.data.displayName,
+    phone: parsed.data.phone || null,
+  }).eq("user_id", userData.user.id);
+  if (error) return { error: "Votre profil n’a pas pu être mis à jour." };
+  revalidatePath("/parametres");
+  return { success: "Votre profil personnel a été enregistré." };
+}
+
+export async function updatePersonalEmailAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
+  const parsedEmail = z.email().max(254).safeParse(String(formData.get("email") ?? "").trim().toLowerCase());
+  if (!parsedEmail.success) return { error: "Saisissez une adresse e-mail valide." };
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.updateUser({ email: parsedEmail.data });
+    if (error || !data.user) return { error: "L’adresse e-mail n’a pas pu être modifiée. Vérifiez-la puis réessayez." };
+    return { success: "Un e-mail de confirmation a été envoyé à la nouvelle adresse." };
+  } catch {
+    return { error: "La modification de l’adresse e-mail est indisponible. Réessayez dans un instant." };
+  }
+}
+
 export async function updateCompanyProfileAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
   const parsed = companySchema.safeParse({
     legalName: String(formData.get("legal_name") ?? ""),

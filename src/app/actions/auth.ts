@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAppUrl } from "@/lib/app-url";
 
 const clientTypes = ["b2b", "b2a", "b2c"] as const;
 
@@ -46,7 +47,7 @@ export async function signUpAction(_previousState: AuthActionState, formData: Fo
     return { error: "Supabase n’est pas configuré. Complétez le fichier .env.local puis réessayez." };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppUrl();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
@@ -83,7 +84,7 @@ export async function resendConfirmationAction(_previousState: AuthActionState, 
 
   try {
     const supabase = await createSupabaseServerClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = getAppUrl();
     const { error } = await supabase.auth.resend({
       type: "signup",
       email: email.data,
@@ -121,19 +122,25 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
   redirect("/tableau-de-bord");
 }
 
-export async function signInWithProviderAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
-  const provider = z.enum(["google", "facebook"]).safeParse(String(formData.get("provider") ?? ""));
-  if (!provider.success) return { error: "Fournisseur de connexion invalide." };
+async function startProviderSignIn(provider: "google" | "facebook"): Promise<AuthActionState> {
   let supabase;
   try { supabase = await createSupabaseServerClient(); }
   catch { return { error: "Supabase n’est pas configuré." }; }
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppUrl();
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: provider.data,
+    provider,
     options: { redirectTo: new URL("/auth/callback", appUrl).toString() },
   });
   if (error || !data.url) return { error: "Connexion sociale indisponible. Vérifiez sa configuration dans Supabase." };
   redirect(data.url);
+}
+
+export async function signInWithGoogleAction(_previousState: AuthActionState): Promise<AuthActionState> {
+  return startProviderSignIn("google");
+}
+
+export async function signInWithFacebookAction(_previousState: AuthActionState): Promise<AuthActionState> {
+  return startProviderSignIn("facebook");
 }
 
 export async function signOutAction() {

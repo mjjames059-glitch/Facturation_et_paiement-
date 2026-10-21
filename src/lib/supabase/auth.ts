@@ -9,8 +9,8 @@ export async function requireAuthenticatedCompany() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) redirect("/auth/sign-in");
 
-  const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", data.user.id).maybeSingle();
+  const { data: profile } = await supabase.from("profiles").select("company_id, role, display_name, phone").eq("user_id", data.user.id).maybeSingle();
   if (!profile?.company_id) redirect("/auth/sign-in");
 
-  return { supabase, user: data.user, companyId: profile.company_id };
+  return { supabase, user: data.user, companyId: profile.company_id, role: profile.role, profile };
 }

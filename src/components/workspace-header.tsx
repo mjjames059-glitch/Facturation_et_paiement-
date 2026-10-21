@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/actions/auth";
 
-export default function WorkspaceHeader({ email }: { email: string }) {
+export default function WorkspaceHeader({ email, role }: { email: string; role?: string }) {
   const pathname = usePathname();
   const links = [
     { href: "/tableau-de-bord", label: "Tableau de bord" },
@@ -12,6 +12,7 @@ export default function WorkspaceHeader({ email }: { email: string }) {
     { href: "/clients", label: "Clients" },
     { href: "/catalogue", label: "Catalogue" },
     { href: "/parametres", label: "Paramètres" },
+    ...(["owner", "manager"].includes(role ?? "") ? [{ href: "/equipe", label: "Équipe" }] : []),
   ];
 
   return (

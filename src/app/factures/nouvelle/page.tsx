@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { redirect } from "next/navigation";
 import InvoiceForm from "@/components/invoice-form";
 import WorkspaceHeader from "@/components/workspace-header";
 import { requireAuthenticatedCompany } from "@/lib/supabase/auth";
@@ -12,13 +13,14 @@ function todayInKinshasa() {
 
 async function InvoiceFormData() {
   await connection();
-  const { supabase, user } = await requireAuthenticatedCompany();
+  const { supabase, user, role } = await requireAuthenticatedCompany();
+  if (role === "viewer") redirect("/factures");
   const [{ data: clients, error: clientsError }, { data: catalog, error: catalogError }] = await Promise.all([
     supabase.from("clients").select("id, name, client_type").order("name"),
     supabase.from("catalog_items").select("id, name, price_amount, currency, unit").eq("is_active", true).order("name"),
   ]);
 
-  return <><WorkspaceHeader email={user.email ?? ""} /><InvoiceForm clients={clients ?? []} catalog={catalog ?? []} today={todayInKinshasa()} loadError={Boolean(clientsError || catalogError)} /></>;
+  return <><WorkspaceHeader email={user.email ?? ""} role={role} /><InvoiceForm clients={clients ?? []} catalog={catalog ?? []} today={todayInKinshasa()} loadError={Boolean(clientsError || catalogError)} /></>;
 }
 
 export default function NewInvoicePage() {

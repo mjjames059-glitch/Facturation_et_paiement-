@@ -2,25 +2,32 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { resendConfirmationAction, signInAction, signInWithProviderAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
+import { resendConfirmationAction, signInAction, signInWithFacebookAction, signInWithGoogleAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
+import { acceptTeamInvitationAction, type TeamActionState } from "@/app/actions/team";
 
 const initialState: AuthActionState = {};
 
 export function SignInForm() {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
-  const [oauthState, oauthAction, oauthPending] = useActionState(signInWithProviderAction, initialState);
+  const [googleState, googleAction, googlePending] = useActionState(signInWithGoogleAction, initialState);
+  const [facebookState, facebookAction, facebookPending] = useActionState(signInWithFacebookAction, initialState);
 
   return (
-    <form action={formAction} className="auth-form signin-form">
-      <div className="auth-providers"><button className="button provider-button" type="submit" formAction={oauthAction} formNoValidate name="provider" value="google" disabled={oauthPending}><span className="provider-mark google-mark">G</span>Continuer avec Google</button><button className="button provider-button" type="submit" formAction={oauthAction} formNoValidate name="provider" value="facebook" disabled={oauthPending}><span className="provider-mark facebook-mark">f</span>Continuer avec Facebook</button></div>
+    <div className="auth-form signin-form">
+      <div className="auth-providers">
+        <form action={googleAction}><button className="button provider-button" type="submit" disabled={googlePending}><span className="provider-mark google-mark">G</span>{googlePending ? "Connexion…" : "Continuer avec Google"}</button></form>
+        <form action={facebookAction}><button className="button provider-button" type="submit" disabled={facebookPending}><span className="provider-mark facebook-mark">f</span>{facebookPending ? "Connexion…" : "Continuer avec Facebook"}</button></form>
+      </div>
+      {(googleState.error || facebookState.error) && <p className="auth-error" role="alert">{googleState.error ?? facebookState.error}</p>}
       <div className="signin-divider"><span>ou avec votre e-mail</span></div>
-      <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
-      <div className="signin-field"><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required /></div>
-      {oauthState.error && <p className="auth-error" role="alert">{oauthState.error}</p>}
-      {state.error && <p className="auth-error" role="alert">{state.error}</p>}
-      <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : "Se connecter"}</button>
+      <form action={formAction}>
+        <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
+        <div className="signin-field"><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required /></div>
+        {state.error && <p className="auth-error" role="alert">{state.error}</p>}
+        <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : "Se connecter"}</button>
+      </form>
       <p className="auth-switch">Vous n’avez pas encore de compte ? <Link href="/auth/sign-up">Créer un compte</Link></p>
-    </form>
+    </div>
   );
 }
 
@@ -82,6 +89,21 @@ export function ConfirmationResendForm() {
       <button className="button primary auth-submit" disabled={pending}>
         {pending ? "Envoi en cours…" : "Renvoyer le lien de confirmation"}
       </button>
+    </form>
+  );
+}
+
+export function InvitationRegistrationForm({ token, email }: { token: string; email: string }) {
+  const [state, formAction, pending] = useActionState(acceptTeamInvitationAction, {} as TeamActionState);
+
+  return (
+    <form action={formAction} className="auth-form">
+      <input type="hidden" name="token" value={token} />
+      <div className="signin-field"><label htmlFor="invite-display-name">Votre nom</label><input id="invite-display-name" name="display_name" autoComplete="name" required minLength={2} maxLength={100} /></div>
+      <div className="signin-field"><label htmlFor="invite-email">Adresse e-mail invitée</label><input id="invite-email" name="email" type="email" value={email} readOnly /></div>
+      <div className="signin-field"><label htmlFor="invite-password">Créer un mot de passe</label><input id="invite-password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={72} /><span className="field-hint">8 caractères minimum</span></div>
+      {state.error && <p className="auth-error" role="alert">{state.error}</p>}
+      <button className="button primary auth-submit" disabled={pending}>{pending ? "Création du compte…" : "Rejoindre l’équipe"}</button>
     </form>
   );
 }

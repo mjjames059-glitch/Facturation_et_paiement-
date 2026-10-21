@@ -258,6 +258,13 @@ tr:hover td { background: color-mix(in srgb, var(--bg) 65%, transparent); }
 .logo-upload-section { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 16px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .logo-preview { display: flex; width: 100px; height: 100px; align-items: center; justify-content: center; border: 1px dashed var(--line); border-radius: 12px; background-color: var(--bg); background-position: center; background-size: contain; background-repeat: no-repeat; color: var(--muted); font-size: .85rem; }
 .rate-form { display: grid; grid-template-columns: minmax(180px, 240px) auto auto; align-items: end; gap: 10px; }
+.team-invite-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(240px, 1.2fr) auto; align-items: end; gap: 12px; }
+.team-invite-form label { margin-top: 0; }
+.team-table { min-width: 580px; }
+.team-table form { margin: 0; }
+.team-link-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.team-load-error { max-width: 1120px; margin: 0 auto 24px; padding: 0 24px; }
+.personal-email-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
 .rate-form .auth-error, .rate-form .message { grid-column: 1 / -1; margin: 0; }
 .section-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .section-title-row h2 { margin-bottom: 0; }
@@ -326,4 +333,14 @@ tr:hover td { background: color-mix(in srgb, var(--bg) 65%, transparent); }
   .stat { padding: 13px; }
   .invoice-line { grid-template-columns: minmax(0, 1fr) 58px 74px 24px; gap: 5px; font-size: .85rem; }
   .invoice-line input { min-width: 0; }
+}
+
+@media (max-width: 900px) {
+  .team-invite-form { grid-template-columns: 1fr 1fr; }
+  .team-invite-form button { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+  .team-invite-form { grid-template-columns: 1fr; }
+  .team-invite-form button { grid-column: auto; }
 }

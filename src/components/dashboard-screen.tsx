@@ -31,6 +31,7 @@ export default function DashboardScreen({
   today,
   exchangeRate,
   loadError,
+  role,
 }: {
   companyName: string;
   billed: string;
@@ -45,6 +46,7 @@ export default function DashboardScreen({
   today: string;
   exchangeRate: string;
   loadError: boolean;
+  role: string;
 }) {
   return (
     <div className="workspace-wrap">
@@ -56,7 +58,7 @@ export default function DashboardScreen({
         <div className="stat"><b>{formatMinorAmount(billed, "USD")}</b><span>Total facturé</span></div>
         <div className="stat"><b>{formatMinorAmount(collected, "USD")}</b><span>Déjà encaissé</span></div>
       </div>
-      {billed === "0" && <section className="panel empty-state">
+      {billed === "0" && role !== "viewer" && <section className="panel empty-state">
         <div><p className="eyebrow">Premiers pas</p><h2>Votre activité commence ici</h2><p className="muted">{clientsCount === 0 ? "Ajoutez votre premier client pour pouvoir créer une facture." : "Créez votre première facture pour suivre les montants à encaisser."}</p></div>
         <Link className="button primary" href={clientsCount === 0 ? "/clients" : "/factures/nouvelle"}>{clientsCount === 0 ? "Ajouter un client" : "Créer une facture"}</Link>
       </section>}
@@ -77,7 +79,7 @@ export default function DashboardScreen({
       <section className="panel">
         <div className="section-title-row"><h2>À relancer en priorité</h2><Link href="/factures">Toutes les factures</Link></div>
         {lateInvoices.length === 0 ? <p className="empty">Aucun retard. Bravo !</p> : <div className="scroll"><table className="invoice-table"><thead><tr><th>N°</th><th>Client</th><th>Échéance</th><th className="right">Reste dû</th><th>Relance</th></tr></thead><tbody>
-          {lateInvoices.map((invoice) => <tr key={invoice.id}><td>{invoice.invoiceNumber}</td><td>{invoice.clientName}</td><td>{frenchDate(invoice.dueDate)}</td><td className="right">{formatMinorAmount(invoice.amountDue, invoice.currency)}</td><td><InvoiceActions invoiceId={invoice.id} status="overdue" today={today} token={invoice.token} clientName={invoice.clientName} clientPhone={invoice.clientPhone} invoiceNumber={invoice.invoiceNumber} amountText={formatMinorAmount(invoice.amountDue, invoice.currency)} reminderAmountText={formatMinorAmount(invoice.amountDue, invoice.currency)} reminderOnly /></td></tr>)}
+          {lateInvoices.map((invoice) => <tr key={invoice.id}><td>{invoice.invoiceNumber}</td><td>{invoice.clientName}</td><td>{frenchDate(invoice.dueDate)}</td><td className="right">{formatMinorAmount(invoice.amountDue, invoice.currency)}</td><td><InvoiceActions invoiceId={invoice.id} status="overdue" today={today} token={invoice.token} clientName={invoice.clientName} clientPhone={invoice.clientPhone} invoiceNumber={invoice.invoiceNumber} amountText={formatMinorAmount(invoice.amountDue, invoice.currency)} reminderAmountText={formatMinorAmount(invoice.amountDue, invoice.currency)} reminderOnly role={role} /></td></tr>)}
         </tbody></table></div>}
       </section>
       <p className="settings-rate">Taux de conversion : 1 USD = {exchangeRate} CDF · <Link href="/parametres">Modifier dans les paramètres</Link></p>

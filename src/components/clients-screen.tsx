@@ -16,7 +16,7 @@ type ClientRecord = {
 const initialState: FormActionState = {};
 const typeLabels = { b2b: "Entreprise", b2a: "Administration", b2c: "Particulier" };
 
-export default function ClientsScreen({ clients, loadError }: { clients: ClientRecord[]; loadError: boolean }) {
+export default function ClientsScreen({ clients, loadError, canEdit }: { clients: ClientRecord[]; loadError: boolean; canEdit: boolean }) {
   const [state, formAction, pending] = useActionState(createClientAction, initialState);
   const [clientType, setClientType] = useState<ClientRecord["client_type"]>("b2b");
 
@@ -24,7 +24,7 @@ export default function ClientsScreen({ clients, loadError }: { clients: ClientR
     <div className="workspace-wrap">
       <h1>Clients</h1>
       <p className="lead">Votre carnet de clients, avec ce qu’ils vous doivent.</p>
-      <section className="panel">
+      {canEdit && <section className="panel">
         <h2>Ajouter un client</h2>
         <form action={formAction}>
           <div className="grid-two">
@@ -39,11 +39,11 @@ export default function ClientsScreen({ clients, loadError }: { clients: ClientR
           {state.success && <p className="message" role="status">{state.success}</p>}
           <div className="inline-action"><button className="button primary" disabled={pending}>{pending ? "Ajout…" : "Ajouter le client"}</button></div>
         </form>
-      </section>
+      </section>}
       <section className="panel">
         <h2>Vos clients</h2>
         {loadError && <p className="auth-error" role="alert">Impossible de charger les clients. Vérifiez que les migrations Supabase sont appliquées.</p>}
-        {clients.length === 0 ? <p className="empty">Aucun client pour l’instant. Ajoutez votre premier client ci-dessus.</p> : (
+        {clients.length === 0 ? <p className="empty">Aucun client pour l’instant.{canEdit ? " Ajoutez votre premier client ci-dessus." : ""}</p> : (
           <div className="scroll"><table><thead><tr><th>Nom</th><th>Type</th><th>Téléphone</th><th>E-mail</th><th>NIF</th></tr></thead>
             <tbody>{clients.map((client) => <tr key={client.id}><td>{client.name}</td><td>{typeLabels[client.client_type]}</td><td>{client.whatsapp_phone || "—"}</td><td>{client.email || "—"}</td><td>{client.nif || "—"}</td></tr>)}</tbody>
           </table></div>

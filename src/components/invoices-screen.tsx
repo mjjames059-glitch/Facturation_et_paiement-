@@ -31,12 +31,14 @@ export default function InvoicesScreen({
   clientPhones,
   today,
   loadError,
+  role,
 }: {
   invoices: InvoiceSummary[];
   clientNames: Record<string, string>;
   clientPhones: Record<string, string>;
   today: string;
   loadError: boolean;
+  role: string;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -50,7 +52,7 @@ export default function InvoicesScreen({
 
   return (
     <div className="workspace-wrap">
-      <div className="page-title-row"><div><h1>Factures</h1><p className="lead">Toutes vos factures et leur statut.</p></div><Link className="button primary" href="/factures/nouvelle">Nouvelle facture</Link></div>
+      <div className="page-title-row"><div><h1>Factures</h1><p className="lead">Toutes vos factures et leur statut.</p></div>{role !== "viewer" && <Link className="button primary" href="/factures/nouvelle">Nouvelle facture</Link>}</div>
       <div className="invoice-filters">
         <div><label htmlFor="invoice-search">Rechercher une facture</label><input id="invoice-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="N° de facture ou nom du client" /></div>
         <div><label htmlFor="invoice-status">Filtrer par statut</label><select id="invoice-status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Tous les statuts</option><option value="draft">Brouillons</option><option value="sent">Envoyées</option><option value="paid">Payées</option><option value="overdue">En retard</option></select></div>
@@ -65,7 +67,7 @@ export default function InvoicesScreen({
               <td>{frenchDate(invoice.issued_at)}</td><td>{frenchDate(invoice.due_date)}</td>
               <td className="right">{formatMinorAmount(invoice.total_amount, invoice.currency)}</td>
               <td><span className={`tag ${statusClasses[invoice.effective_status]}`}>{statusLabels[invoice.effective_status]}</span></td>
-              <td><InvoiceActions invoiceId={invoice.id} status={invoice.effective_status} today={today} token={invoice.public_token} clientName={clientNames[invoice.client_id] ?? "client"} clientPhone={clientPhones[invoice.client_id] ?? ""} invoiceNumber={invoice.invoice_number} amountText={formatMinorAmount(invoice.total_amount, invoice.currency)} reminderAmountText={formatMinorAmount(BigInt(invoice.total_amount) - BigInt(invoice.paid_amount), invoice.currency)} /></td>
+              <td><InvoiceActions invoiceId={invoice.id} status={invoice.effective_status} today={today} token={invoice.public_token} clientName={clientNames[invoice.client_id] ?? "client"} clientPhone={clientPhones[invoice.client_id] ?? ""} invoiceNumber={invoice.invoice_number} amountText={formatMinorAmount(invoice.total_amount, invoice.currency)} reminderAmountText={formatMinorAmount(BigInt(invoice.total_amount) - BigInt(invoice.paid_amount), invoice.currency)} role={role} /></td>
             </tr>)}</tbody>
           </table></div>
         )}

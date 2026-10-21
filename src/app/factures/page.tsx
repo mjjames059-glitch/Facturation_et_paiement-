@@ -12,7 +12,7 @@ function todayInKinshasa() {
 
 async function InvoiceData() {
   await connection();
-  const { supabase, user } = await requireAuthenticatedCompany();
+  const { supabase, user, role } = await requireAuthenticatedCompany();
   const { data, error } = await supabase.from("invoice_status_summary").select("id, client_id, invoice_number, currency, issued_at, due_date, total_amount, paid_amount, effective_status").order("issued_at", { ascending: false });
   const invoices = (data ?? []) as InvoiceSummary[];
   const clientIds = [...new Set(invoices.map((invoice) => invoice.client_id))];
@@ -26,7 +26,7 @@ async function InvoiceData() {
   const publicTokens = Object.fromEntries((tokens ?? []).map((invoice) => [invoice.id, invoice.public_token]));
   for (const invoice of invoices) invoice.public_token = publicTokens[invoice.id] ?? "";
 
-  return <><WorkspaceHeader email={user.email ?? ""} /><InvoicesScreen invoices={invoices} clientNames={clientNames} clientPhones={clientPhones} today={todayInKinshasa()} loadError={Boolean(error || clientsError || tokensError)} /></>;
+  return <><WorkspaceHeader email={user.email ?? ""} role={role} /><InvoicesScreen invoices={invoices} clientNames={clientNames} clientPhones={clientPhones} today={todayInKinshasa()} loadError={Boolean(error || clientsError || tokensError)} role={role} /></>;
 }
 
 export default function InvoicesPage() {

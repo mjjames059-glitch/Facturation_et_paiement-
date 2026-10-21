@@ -18,6 +18,7 @@ export default function InvoiceActions({
   amountText,
   reminderAmountText,
   reminderOnly = false,
+  role,
 }: {
   invoiceId: string;
   status: string;
@@ -29,6 +30,7 @@ export default function InvoiceActions({
   amountText: string;
   reminderAmountText: string;
   reminderOnly?: boolean;
+  role: string;
 }) {
   const [sendState, sendAction, sending] = useActionState(markInvoiceSentAction, initialState);
   const [paymentState, paymentAction, paying] = useActionState(registerPaymentAction, initialState);
@@ -53,8 +55,12 @@ export default function InvoiceActions({
     setCopied(true);
   }
 
-  const reminderButton = <button className="button small primary" type="button" onClick={sendReminder}>Relancer</button>;
+  const canSend = role !== "viewer";
+  const canRegisterPayment = ["owner", "manager", "accountant"].includes(role);
+  const reminderButton = canSend ? <button className="button small primary" type="button" onClick={sendReminder}>Relancer</button> : null;
   if (reminderOnly && status === "overdue") return reminderButton;
+
+  if (status === "draft" && !canSend) return <span className="muted">Lecture seule</span>;
 
   if (status === "draft") return (
     <div className="invoice-actions">
@@ -65,10 +71,10 @@ export default function InvoiceActions({
 
   return (
     <div className="invoice-actions">
-      <div className="share-actions"><Link className="button small" href={`/f/${token}`} target="_blank">Voir le lien</Link><Link className="button small" href={`/f/${token}/pdf`}>PDF</Link><button className="button small ok" type="button" onClick={sendWhatsApp}>WhatsApp</button><button className="button small" type="button" onClick={copyLink}>{copied ? "Lien copié" : "Copier le lien"}</button></div>
+      <div className="share-actions"><Link className="button small" href={`/f/${token}`} target="_blank">Voir le lien</Link><Link className="button small" href={`/f/${token}/pdf`}>PDF</Link>{canSend && <><button className="button small ok" type="button" onClick={sendWhatsApp}>WhatsApp</button><button className="button small" type="button" onClick={copyLink}>{copied ? "Lien copié" : "Copier le lien"}</button></>}</div>
       {status === "paid" && <span className="muted">Paiement reçu</span>}
       {status === "overdue" && reminderButton}
-      {status === "paid" ? null : <>
+      {status === "paid" || !canRegisterPayment ? null : <>
       <details>
         <summary className="button small">Marquer payée</summary>
         <form className="payment-form" action={paymentAction}>

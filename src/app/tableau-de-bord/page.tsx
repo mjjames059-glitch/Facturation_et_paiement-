@@ -30,7 +30,7 @@ function displayRate(value: string | number) {
 
 async function DashboardData() {
   await connection();
-  const { supabase, user } = await requireAuthenticatedCompany();
+  const { supabase, user, role } = await requireAuthenticatedCompany();
   const [invoiceResult, clientResult, companyResult, settingsResult, tokenResult] = await Promise.all([
     supabase.from("invoice_status_summary").select("id, client_id, invoice_number, currency, issued_at, due_date, total_amount, paid_amount, stored_status, effective_status").order("issued_at", { ascending: false }),
     supabase.from("clients").select("id, name, client_type, whatsapp_phone"),
@@ -87,7 +87,7 @@ async function DashboardData() {
   const companyName = companyResult.data?.legal_name || companyResult.data?.company_name || "votre entreprise";
   const loadError = Boolean(invoiceResult.error || clientResult.error || companyResult.error || settingsResult.error || tokenResult.error);
 
-  return <><WorkspaceHeader email={user.email ?? ""} /><DashboardScreen
+  return <><WorkspaceHeader email={user.email ?? ""} role={role} /><DashboardScreen role={role}
     companyName={companyName}
     billed={billed.toString()}
     collected={collected.toString()}
