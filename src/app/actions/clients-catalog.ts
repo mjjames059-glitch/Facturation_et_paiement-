@@ -114,3 +114,25 @@ export async function archiveCatalogItemAction(formData: FormData) {
   await context.supabase.from("catalog_items").update({ is_active: false }).eq("id", id.data).eq("company_id", context.companyId);
   revalidatePath("/catalogue");
 }
+
+export async function enableCatalogSharingAction(): Promise<FormActionState> {
+  const context = await getCompanyId();
+  if (!context.companyId) return { error: "Connectez-vous avant de partager le catalogue." };
+  const { error } = await context.supabase.from("catalog_shares").insert({ company_id: context.companyId });
+  if (error) {
+    // Un double clic ou une répétition réseau conserve le lien existant.
+    const { data: existing } = await context.supabase.from("catalog_shares").select("token").eq("company_id", context.companyId).maybeSingle();
+    if (!existing) return { error: "Le lien de partage n’a pas pu être créé." };
+  }
+  revalidatePath("/catalogue");
+  return { success: "Le lien de partage est actif." };
+}
+
+export async function disableCatalogSharingAction(): Promise<FormActionState> {
+  const context = await getCompanyId();
+  if (!context.companyId) return { error: "Connectez-vous avant de modifier le partage." };
+  const { error } = await context.supabase.from("catalog_shares").delete().eq("company_id", context.companyId);
+  if (error) return { error: "Le partage n’a pas pu être désactivé." };
+  revalidatePath("/catalogue");
+  return { success: "Le lien public a été révoqué." };
+}

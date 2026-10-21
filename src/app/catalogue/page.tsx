@@ -10,8 +10,8 @@ async function CatalogData() {
   const { data, error } = await supabase.from("catalog_items")
     .select("id, name, price_amount, currency, unit, is_active")
     .order("name");
-
-  return <><WorkspaceHeader email={user.email ?? ""} /><CatalogScreen items={data ?? []} loadError={Boolean(error)} /></>;
+  const { data: share } = await supabase.from("catalog_shares").select("token").maybeSingle();
+  return <><WorkspaceHeader email={user.email ?? ""} /><CatalogScreen items={data ?? []} loadError={Boolean(error)} shareToken={share?.token ?? null} /></>;
 }
 
 export default function CataloguePage() {

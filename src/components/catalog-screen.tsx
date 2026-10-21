@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { archiveCatalogItemAction, createCatalogItemAction, type FormActionState } from "@/app/actions/clients-catalog";
+import { archiveCatalogItemAction, createCatalogItemAction, disableCatalogSharingAction, enableCatalogSharingAction, type FormActionState } from "@/app/actions/clients-catalog";
 import { formatMinorAmount } from "@/lib/money";
 
 type CatalogRecord = {
@@ -15,13 +15,14 @@ type CatalogRecord = {
 
 const initialState: FormActionState = {};
 
-export default function CatalogScreen({ items, loadError }: { items: CatalogRecord[]; loadError: boolean }) {
+export default function CatalogScreen({ items, loadError, shareToken }: { items: CatalogRecord[]; loadError: boolean; shareToken: string | null }) {
   const [state, formAction, pending] = useActionState(createCatalogItemAction, initialState);
 
   return (
     <div className="workspace-wrap">
       <h1>Catalogue</h1>
       <p className="lead">Retrouvez vos produits et services pour les ajouter rapidement à une facture.</p>
+      <section className="panel"><h2>Partager votre catalogue</h2><p className="note">Le lien public affiche uniquement le nom de votre entreprise et les articles actifs avec leurs prix.</p>{shareToken ? <><p><a href={`/c/${shareToken}`} target="_blank" rel="noreferrer">Ouvrir le catalogue partagé</a></p><form action={disableCatalogSharingAction}><button className="button" type="submit">Désactiver le lien</button></form></> : <form action={enableCatalogSharingAction}><button className="button primary" type="submit">Créer un lien de partage</button></form>}</section>
       <section className="panel">
         <h2>Ajouter un produit ou service</h2>
         <form action={formAction}>

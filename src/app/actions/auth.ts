@@ -95,6 +95,21 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
   redirect("/tableau-de-bord");
 }
 
+export async function signInWithProviderAction(formData: FormData): Promise<AuthActionState> {
+  const provider = z.enum(["google", "apple"]).safeParse(String(formData.get("provider") ?? ""));
+  if (!provider.success) return { error: "Fournisseur de connexion invalide." };
+  let supabase;
+  try { supabase = await createSupabaseServerClient(); }
+  catch { return { error: "Supabase n’est pas configuré." }; }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: provider.data,
+    options: { redirectTo: new URL("/auth/callback", appUrl).toString() },
+  });
+  if (error || !data.url) return { error: "Connexion sociale indisponible. Vérifiez sa configuration dans Supabase." };
+  redirect(data.url);
+}
+
 export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();

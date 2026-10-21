@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { signInAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
+import { signInAction, signInWithProviderAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
 
 const initialState: AuthActionState = {};
 
@@ -15,6 +15,7 @@ export function SignInForm() {
       <input id="email" name="email" type="email" autoComplete="email" required maxLength={254} />
       <label htmlFor="password">Mot de passe</label>
       <input id="password" name="password" type="password" autoComplete="current-password" required />
+      <div className="auth-providers"><button className="button" type="submit" formAction={signInWithProviderAction} name="provider" value="google">Continuer avec Google</button><button className="button" type="submit" formAction={signInWithProviderAction} name="provider" value="apple">Continuer avec Apple</button></div>
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : "Se connecter"}</button>
       <p className="auth-switch">Vous n’avez pas encore de compte ? <Link href="/auth/sign-up">Créer un compte</Link></p>
