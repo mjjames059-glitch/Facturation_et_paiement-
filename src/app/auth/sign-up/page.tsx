@@ -33,7 +33,15 @@ async function SignUpContent({ searchParams }: PageProps) {
 
   const { data: profile, error } = await supabase.from("profiles").select("company_id").eq("user_id", user.id).maybeSingle();
   if (profile?.company_id) redirect("/tableau-de-bord");
-  if (error) redirect("/auth/confirmation?status=profile");
+  if (error) {
+    console.error("Facturo Google registration profile lookup failed", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    redirect("/auth/confirmation?status=profile");
+  }
 
   const metadata = user.user_metadata as Record<string, unknown>;
   const displayName = [metadata.full_name, metadata.name].find((value): value is string => typeof value === "string") ?? "";

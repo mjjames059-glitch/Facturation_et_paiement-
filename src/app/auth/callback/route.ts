@@ -58,6 +58,15 @@ export async function GET(request: NextRequest) {
       .select("company_id")
       .eq("user_id", data.user.id)
       .maybeSingle();
+    if (profileError) {
+      console.error("Facturo OAuth profile lookup failed", {
+        code: profileError.code,
+        message: profileError.message,
+        details: profileError.details,
+        hint: profileError.hint,
+      });
+    }
+
     const destination = profileError
       ? "/auth/confirmation?status=profile"
       : profile?.company_id
@@ -76,8 +85,11 @@ export async function GET(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 365 * 5,
     });
     return response;
-  } catch {
-    console.error("Facturo OAuth callback failed before session completion");
+  } catch (error) {
+    console.error("Facturo OAuth callback failed before session completion", {
+      name: error instanceof Error ? error.name : "unknown",
+      message: error instanceof Error ? error.message : "Unexpected non-Error exception",
+    });
     return oauthFailure(request, "server");
   }
 }

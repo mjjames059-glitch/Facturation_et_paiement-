@@ -31,13 +31,16 @@ export function SignInForm() {
 
   return (
     <div className="auth-form signin-form">
-      <div className="auth-providers">
-        <button className="button provider-button" type="button" onClick={() => void signInWithProvider("google")} disabled={oauthPending !== null}><span className="provider-mark google-mark">G</span>{oauthPending === "google" ? "Connexion…" : "Continuer avec Google"}</button>
-        <button className="button provider-button" type="button" onClick={() => void signInWithProvider("facebook")} disabled={oauthPending !== null}><span className="provider-mark facebook-mark">f</span>{oauthPending === "facebook" ? "Connexion…" : "Continuer avec Facebook"}</button>
-      </div>
+      <section className="signin-provider-section" aria-label="Connexion avec Google ou Facebook">
+        <p className="signin-method-title">Connexion avec un compte social</p>
+        <div className="auth-providers">
+          <button className="button provider-button" type="button" onClick={() => void signInWithProvider("google")} disabled={oauthPending !== null}><span className="provider-mark google-mark">G</span>{oauthPending === "google" ? "Connexion…" : "Continuer avec Google"}</button>
+          <button className="button provider-button" type="button" onClick={() => void signInWithProvider("facebook")} disabled={oauthPending !== null}><span className="provider-mark facebook-mark">f</span>{oauthPending === "facebook" ? "Connexion…" : "Continuer avec Facebook"}</button>
+        </div>
+      </section>
       {oauthError && <p className="auth-error" role="alert">{oauthError}</p>}
       <div className="signin-divider"><span>ou avec votre e-mail</span></div>
-      <form action={formAction}>
+      <form action={formAction} className="signin-credentials">
         <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
         <div className="signin-field"><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required /></div>
         {state.error && <p className="auth-error" role="alert">{state.error}</p>}
