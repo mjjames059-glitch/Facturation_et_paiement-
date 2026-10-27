@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       ? "/auth/confirmation?status=profile"
       : profile?.company_id
         ? "/tableau-de-bord"
-        : "/auth/sign-up?mode=google";
+        : "/auth/sign-up?mode=oauth";
     const response = NextResponse.redirect(new URL(destination, request.url));
 
     for (const { name, value, options } of cookiesToSet) {

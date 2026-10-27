@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { GoogleCompanyRegistrationForm, SignUpForm } from "@/components/auth-form";
+import { OAuthCompanyRegistrationForm, SignUpForm } from "@/components/auth-form";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type PageProps = { searchParams: Promise<{ mode?: string }> };
@@ -21,7 +21,7 @@ function SignUpCard({ children, title, description }: { children: React.ReactNod
 
 async function SignUpContent({ searchParams }: PageProps) {
   const { mode } = await searchParams;
-  if (mode !== "google") {
+  if (mode !== "oauth" && mode !== "google") {
     return <SignUpCard title="Créer votre compte" description="Quelques informations pour adapter l’outil à votre activité."><SignUpForm /></SignUpCard>;
   }
 
@@ -34,7 +34,7 @@ async function SignUpContent({ searchParams }: PageProps) {
   const { data: profile, error } = await supabase.from("profiles").select("company_id").eq("user_id", user.id).maybeSingle();
   if (profile?.company_id) redirect("/tableau-de-bord");
   if (error) {
-    console.error("Facturo Google registration profile lookup failed", {
+    console.error("Facturo OAuth registration profile lookup failed", {
       code: error.code,
       message: error.message,
       details: error.details,
@@ -45,8 +45,8 @@ async function SignUpContent({ searchParams }: PageProps) {
 
   const metadata = user.user_metadata as Record<string, unknown>;
   const displayName = [metadata.full_name, metadata.name].find((value): value is string => typeof value === "string") ?? "";
-  return <SignUpCard title="Compléter votre inscription" description="Google a vérifié vos informations personnelles. Ajoutez les renseignements de votre entreprise pour créer votre espace Facturo.">
-    <GoogleCompanyRegistrationForm email={user.email ?? ""} displayName={displayName} />
+  return <SignUpCard title="Compléter votre inscription" description="Votre compte social a vérifié vos informations personnelles. Ajoutez les renseignements de votre entreprise pour créer votre espace Facturo.">
+    <OAuthCompanyRegistrationForm email={user.email ?? ""} displayName={displayName} />
   </SignUpCard>;
 }
 

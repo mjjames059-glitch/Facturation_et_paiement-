@@ -92,7 +92,6 @@ export function SignUpForm() {
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       {state.success && <p className="message" role="status">{state.success}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Création…" : "Créer mon compte"}</button>
-      <p className="auth-switch">Vous avez déjà un compte ? <Link href="/auth/sign-in">Se connecter</Link></p>
     </form>
   );
 }
@@ -126,16 +125,16 @@ function GoogleSignUpButton() {
   </div>;
 }
 
-export function GoogleCompanyRegistrationForm({ email, displayName }: { email: string; displayName: string }) {
+export function OAuthCompanyRegistrationForm({ email, displayName }: { email: string; displayName: string }) {
   const [state, formAction, pending] = useActionState(completeOAuthRegistrationAction, initialState);
   const [vatStatus, setVatStatus] = useState("unknown");
 
   return <form action={formAction} className="auth-form">
     <div className="grid-two">
-      <div><label htmlFor="google-display-name">Votre nom</label><input id="google-display-name" name="display_name" autoComplete="name" defaultValue={displayName} required minLength={2} maxLength={100} /></div>
-      <div><label htmlFor="google-email">Adresse e-mail Google</label><input id="google-email" type="email" value={email} readOnly /></div>
+      <div><label htmlFor="oauth-display-name">Votre nom</label><input id="oauth-display-name" name="display_name" autoComplete="name" defaultValue={displayName} required minLength={2} maxLength={100} /></div>
+      <div><label htmlFor="oauth-email">Adresse e-mail du compte social</label><input id="oauth-email" type="email" value={email} readOnly /></div>
     </div>
-    <p className="field-hint">Ces informations personnelles viennent de votre connexion Google. Complétez séparément les renseignements de votre entreprise.</p>
+    <p className="field-hint">Ces informations personnelles viennent de votre connexion sociale. Complétez séparément les renseignements de votre entreprise.</p>
     <div><label htmlFor="google-company-name">Nom de l’entreprise</label><input id="google-company-name" name="company_name" required minLength={2} maxLength={120} /></div>
     <label htmlFor="google-sector">Secteur d’activité</label>
     <select id="google-sector" name="sector" defaultValue="Autre">

@@ -14,18 +14,18 @@ async function ConfirmationContent({ searchParams }: PageProps) {
   const sessionProblem = status === "session";
   const hasProblem = linkProblem || oauthProblem || profileProblem || sessionProblem;
   const oauthMessage = reason === "provider"
-    ? "Google a refusé ou interrompu la demande. Recommencez et acceptez la connexion."
+    ? "Le fournisseur social a refusé ou interrompu la demande. Recommencez et acceptez la connexion."
     : reason === "redirect_not_allowed"
       ? "Supabase a refusé l’URL de retour de la connexion. Ajoutez l’URL de callback de cette application dans Authentication → URL Configuration → Redirect URLs, puis réessayez."
       : reason === "missing_code"
-        ? "Le retour de Google ne contenait pas le code de connexion attendu. Vérifiez l’URL de retour autorisée dans Supabase."
+        ? "Le retour du fournisseur social ne contenait pas le code de connexion attendu. Vérifiez l’URL de retour autorisée dans Supabase."
         : reason === "pkce"
           ? "Le navigateur n’a pas conservé l’état temporaire de connexion. Recommencez dans le même navigateur, sur le même domaine Facturo."
           : reason === "expired_code"
-            ? "Le code de connexion a expiré ou a déjà servi. Recommencez le parcours Google depuis Facturo."
+            ? "Le code de connexion a expiré ou a déjà servi. Recommencez le parcours depuis Facturo."
             : reason === "server"
               ? "Le serveur Facturo n’a pas pu terminer le retour OAuth. Consultez les journaux de la fonction /auth/callback dans Vercel."
-              : "Supabase n’a pas pu échanger le code Google. Vérifiez que les variables Vercel ciblent le même projet Supabase que celui configuré pour Google.";
+              : "Supabase n’a pas pu échanger le code de connexion. Vérifiez que les variables Vercel ciblent le même projet Supabase que celui configuré pour le fournisseur social.";
 
   return (
     <main className="auth-shell signin-shell">
@@ -40,9 +40,9 @@ async function ConfirmationContent({ searchParams }: PageProps) {
             : oauthProblem
               ? oauthMessage
               : sessionProblem
-                ? "Le retour Google a atteint le tableau de bord, mais le serveur ne retrouve pas la session. Vérifiez que l’adresse du site est identique du début à la fin de la connexion. Si le problème continue, consultez les journaux Vercel pour l’erreur du contrôle de session."
+                ? "Le retour de la connexion sociale a atteint le tableau de bord, mais le serveur ne retrouve pas la session. Vérifiez que l’adresse du site est identique du début à la fin de la connexion. Si le problème continue, consultez les journaux Vercel pour l’erreur du contrôle de session."
               : profileProblem
-                ? "Google a connecté votre compte, mais Facturo ne trouve pas son profil d’entreprise dans ce projet Supabase. Vérifiez que les migrations Facturo y sont appliquées."
+                ? "Votre compte social est connecté, mais Facturo ne trouve pas son profil d’entreprise dans ce projet Supabase. Vérifiez que les migrations Facturo y sont appliquées."
                 : "Nous vous avons envoyé un lien pour confirmer votre adresse et activer votre compte Facturo."}
         </p>
         {!hasProblem && <p className="confirmation-tip">Le message peut prendre quelques minutes. Vérifiez aussi vos courriers indésirables.</p>}
