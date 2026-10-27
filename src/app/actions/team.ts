@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireAuthenticatedCompany } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/app-url";
+import { getLegalConsentMetadata } from "@/lib/legal";
 
 export type TeamActionState = { error?: string; success?: string; invitationUrl?: string };
 
@@ -54,14 +55,20 @@ const invitedSignupSchema = z.object({
   email: z.email().max(254),
   displayName: z.string().trim().min(2).max(100),
   password: z.string().min(8).max(72),
+  legalConsent: z.literal(true),
 });
 
 export async function acceptTeamInvitationAction(_previousState: TeamActionState, formData: FormData): Promise<TeamActionState> {
+  if (formData.get("legal_consent") !== "on") {
+    return { error: "Vous devez accepter la politique de confidentialité et les conditions d’utilisation." };
+  }
+
   const parsed = invitedSignupSchema.safeParse({
     token: String(formData.get("token") ?? ""),
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     displayName: String(formData.get("display_name") ?? "").trim(),
     password: String(formData.get("password") ?? ""),
+    legalConsent: formData.get("legal_consent") === "on",
   });
   if (!parsed.success) return { error: "Vérifiez le nom et le mot de passe (8 caractères minimum)." };
 
@@ -84,7 +91,7 @@ export async function acceptTeamInvitationAction(_previousState: TeamActionState
     password: parsed.data.password,
     options: {
       emailRedirectTo: new URL("/auth/callback", appUrl).toString(),
-      data: { display_name: parsed.data.displayName, company_invite_token: parsed.data.token },
+      data: { display_name: parsed.data.displayName, company_invite_token: parsed.data.token, ...getLegalConsentMetadata() },
     },
   });
   if (error || !data.user) return { error: "Impossible de créer le compte. Vérifiez l’adresse et réessayez." };

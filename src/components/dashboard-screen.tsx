@@ -1,5 +1,6 @@
 import Link from "next/link";
 import InvoiceActions from "@/components/invoice-actions";
+import ContactPanel from "@/components/contact-panel";
 import { formatMinorAmount, type CurrencyCode } from "@/lib/money";
 
 export type DashboardLateInvoice = {
@@ -83,6 +84,7 @@ export default function DashboardScreen({
         </tbody></table></div>}
       </section>
       <p className="settings-rate">Taux de conversion : 1 USD = {exchangeRate} CDF · <Link href="/parametres">Modifier dans les paramètres</Link></p>
+      <ContactPanel />
     </div>
   );
 }

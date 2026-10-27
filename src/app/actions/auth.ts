@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/app-url";
+import { getLegalConsentMetadata } from "@/lib/legal";
 
 const clientTypes = ["b2b", "b2a", "b2c"] as const;
 
@@ -17,6 +18,7 @@ const signUpSchema = z.object({
   servedClientTypes: z.array(z.enum(clientTypes)).min(1),
   vatStatus: z.enum(["yes", "no", "unknown"]),
   joinWaitlist: z.boolean(),
+  legalConsent: z.literal(true),
 });
 
 export type AuthActionState = {
@@ -25,6 +27,10 @@ export type AuthActionState = {
 };
 
 export async function signUpAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  if (formData.get("legal_consent") !== "on") {
+    return { error: "Vous devez accepter la politique de confidentialité et les conditions d’utilisation." };
+  }
+
   const parsed = signUpSchema.safeParse({
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     password: String(formData.get("password") ?? ""),
@@ -34,6 +40,7 @@ export async function signUpAction(_previousState: AuthActionState, formData: Fo
     servedClientTypes: formData.getAll("served_client_types").map(String),
     vatStatus: String(formData.get("vat_status") ?? ""),
     joinWaitlist: formData.get("join_waitlist") === "on",
+    legalConsent: formData.get("legal_consent") === "on",
   });
 
   if (!parsed.success) {
@@ -60,6 +67,7 @@ export async function signUpAction(_previousState: AuthActionState, formData: Fo
         served_client_types: parsed.data.servedClientTypes,
         vat_status: parsed.data.vatStatus,
         join_waitlist: parsed.data.vatStatus === "yes" && parsed.data.joinWaitlist,
+        ...getLegalConsentMetadata(),
       },
     },
   });
@@ -107,9 +115,14 @@ const oauthRegistrationSchema = z.object({
   servedClientTypes: z.array(z.enum(clientTypes)).min(1),
   vatStatus: z.enum(["yes", "no", "unknown"]),
   joinWaitlist: z.boolean(),
+  legalConsent: z.literal(true),
 });
 
 export async function completeOAuthRegistrationAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  if (formData.get("legal_consent") !== "on") {
+    return { error: "Vous devez accepter la politique de confidentialité et les conditions d’utilisation." };
+  }
+
   const parsed = oauthRegistrationSchema.safeParse({
     displayName: String(formData.get("display_name") ?? "").trim(),
     companyName: String(formData.get("company_name") ?? "").trim(),
@@ -117,6 +130,7 @@ export async function completeOAuthRegistrationAction(_previousState: AuthAction
     servedClientTypes: formData.getAll("served_client_types").map(String),
     vatStatus: String(formData.get("vat_status") ?? ""),
     joinWaitlist: formData.get("join_waitlist") === "on",
+    legalConsent: formData.get("legal_consent") === "on",
   });
   if (!parsed.success) return { error: "Complétez votre nom, votre entreprise et au moins un type de client." };
 
@@ -137,6 +151,9 @@ export async function completeOAuthRegistrationAction(_previousState: AuthAction
     .maybeSingle();
   if (profileError) return { error: "Impossible de vérifier le profil. Rechargez la page ou contactez le support." };
   if (existingProfile?.company_id) redirect("/tableau-de-bord");
+
+  const { error: consentError } = await supabase.auth.updateUser({ data: getLegalConsentMetadata() });
+  if (consentError) return { error: "Impossible d’enregistrer votre acceptation. Réessayez." };
 
   const { error } = await supabase.rpc("complete_oauth_registration", {
     p_display_name: parsed.data.displayName,

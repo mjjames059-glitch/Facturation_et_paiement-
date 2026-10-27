@@ -4,6 +4,7 @@ import { LegalDocument } from "@/components/legal-document";
 export const metadata: Metadata = {
   title: "Conditions d’utilisation — Facturo",
   description: "Conditions d’accès et d’utilisation du service Facturo.",
+  robots: { index: true, follow: true },
 };
 
 export default function TermsOfUsePage() {

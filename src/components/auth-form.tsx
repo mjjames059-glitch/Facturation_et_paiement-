@@ -8,6 +8,20 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const initialState: AuthActionState = {};
 
+function LegalConsentField({ id }: { id: string }) {
+  return (
+    <div className="legal-consent">
+      <input id={id} name="legal_consent" type="checkbox" required aria-labelledby={`${id}-label`} />
+      <p id={`${id}-label`}>
+        J’ai lu et j’approuve la{" "}
+        <Link href="/politique-confidentialite" target="_blank" rel="noreferrer">politique de confidentialité</Link>
+        {" "}et les{" "}
+        <Link href="/conditions-utilisation" target="_blank" rel="noreferrer">conditions d’utilisation</Link>.
+      </p>
+    </div>
+  );
+}
+
 export function SignInForm() {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
   const [oauthPending, setOauthPending] = useState<"google" | "facebook" | null>(null);
@@ -89,6 +103,7 @@ export function SignUpForm() {
         <div><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" required maxLength={254} /></div>
         <div><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={72} /><span className="field-hint">8 caractères minimum</span></div>
       </div>
+      <LegalConsentField id="signup-legal-consent" />
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       {state.success && <p className="message" role="status">{state.success}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Création…" : "Créer mon compte"}</button>
@@ -157,6 +172,7 @@ export function OAuthCompanyRegistrationForm({ email, displayName }: { email: st
       </div>
       {vatStatus === "yes" && <label className="waitlist-choice"><input type="checkbox" name="join_waitlist" /> Rejoindre la liste d’attente DGI</label>}
     </fieldset>
+    <LegalConsentField id="oauth-legal-consent" />
     {state.error && <p className="auth-error" role="alert">{state.error}</p>}
     <button className="button primary auth-submit" disabled={pending}>{pending ? "Finalisation…" : "Créer mon espace Facturo"}</button>
   </form>;
@@ -189,6 +205,7 @@ export function InvitationRegistrationForm({ token, email }: { token: string; em
       <div className="signin-field"><label htmlFor="invite-display-name">Votre nom</label><input id="invite-display-name" name="display_name" autoComplete="name" required minLength={2} maxLength={100} /></div>
       <div className="signin-field"><label htmlFor="invite-email">Adresse e-mail invitée</label><input id="invite-email" name="email" type="email" value={email} readOnly /></div>
       <div className="signin-field"><label htmlFor="invite-password">Créer un mot de passe</label><input id="invite-password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={72} /><span className="field-hint">8 caractères minimum</span></div>
+      <LegalConsentField id="invitation-legal-consent" />
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Création du compte…" : "Rejoindre l’équipe"}</button>
     </form>

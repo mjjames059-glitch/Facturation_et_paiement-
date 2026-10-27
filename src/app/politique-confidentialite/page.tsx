@@ -4,6 +4,7 @@ import { LegalDocument } from "@/components/legal-document";
 export const metadata: Metadata = {
   title: "Politique de confidentialité — Facturo",
   description: "Comment Facturo collecte, utilise et protège vos données.",
+  robots: { index: true, follow: true },
 };
 
 export default function PrivacyPolicyPage() {

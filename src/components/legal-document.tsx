@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CONTACT_EMAIL, CONTACT_PHONE, CONTACT_WHATSAPP_URL } from "@/lib/contact";
 
 export function LegalDocument({
   title,
@@ -26,7 +27,10 @@ export function LegalDocument({
         <div className="legal-content">{children}</div>
         <footer className="legal-footer">
           <span>Facturo — James Muhimizi Nyabenda, RDC</span>
-          <a href="mailto:james.m.nyabenda@gmail.com">james.m.nyabenda@gmail.com</a>
+          <div className="legal-contact">
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+            <a href={CONTACT_WHATSAPP_URL}>WhatsApp : {CONTACT_PHONE}</a>
+          </div>
         </footer>
       </article>
     </main>
