@@ -167,8 +167,40 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
     return { error: "Supabase n’est pas configuré. Complétez le fichier .env.local puis réessayez." };
   }
 
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { error: "Adresse e-mail ou mot de passe incorrect." };
+  let signInError;
+  try {
+    const result = await supabase.auth.signInWithPassword(parsed.data);
+    signInError = result.error;
+  } catch (error) {
+    console.error("Facturo password sign-in request failed unexpectedly", error);
+    return { error: "Le service de connexion est momentanément indisponible. Vérifiez votre connexion puis réessayez." };
+  }
+
+  if (signInError) {
+    const status = signInError.status ?? 0;
+    const isRateLimited = status === 429 || signInError.code === "over_request_rate_limit";
+    const isServiceUnavailable =
+      signInError.name === "AuthRetryableFetchError" ||
+      status === 0 ||
+      status >= 500 ||
+      signInError.code === "request_timeout";
+
+    if (isRateLimited || isServiceUnavailable) {
+      console.error("Facturo password sign-in service failed", {
+        name: signInError.name,
+        code: signInError.code ?? "unknown",
+        status: signInError.status ?? "unknown",
+      });
+      return {
+        error: isRateLimited
+          ? "Trop de tentatives de connexion. Réessayez dans quelques minutes."
+          : "Le service de connexion est momentanément indisponible. Vérifiez votre connexion puis réessayez.",
+      };
+    }
+
+    return { error: "Adresse e-mail ou mot de passe incorrect." };
+  }
+
   (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
   redirect("/tableau-de-bord");
 }
@@ -187,10 +219,12 @@ async function startProviderSignIn(provider: "google" | "facebook"): Promise<Aut
 }
 
 export async function signInWithGoogleAction(_previousState: AuthActionState): Promise<AuthActionState> {
+  void _previousState;
   return startProviderSignIn("google");
 }
 
 export async function signInWithFacebookAction(_previousState: AuthActionState): Promise<AuthActionState> {
+  void _previousState;
   return startProviderSignIn("facebook");
 }
 

@@ -2,17 +2,22 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
-function oauthFailure(request: NextRequest, reason: string) {
+function oauthFailure(request: NextRequest, reason: string, detail?: string) {
   const url = new URL("/auth/confirmation", request.url);
   url.searchParams.set("status", "oauth");
   url.searchParams.set("reason", reason);
+  if (detail) url.searchParams.set("detail", detail);
   return NextResponse.redirect(url);
 }
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  if (request.nextUrl.searchParams.has("error")) {
-    return oauthFailure(request, "provider");
+  const providerError = request.nextUrl.searchParams.get("error");
+  const providerErrorCode = request.nextUrl.searchParams.get("error_code");
+  const providerErrorDescription = request.nextUrl.searchParams.get("error_description");
+  if (providerError) {
+    const reason = providerErrorCode === "redirect_not_allowed" ? "redirect_not_allowed" : "provider";
+    return oauthFailure(request, reason, providerErrorDescription ?? providerErrorCode ?? undefined);
   }
   if (!code) return oauthFailure(request, "missing_code");
 
@@ -31,7 +36,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    // The flow id identifies the PKCE verifier that belongs to this callback.
+    const flowId = request.nextUrl.searchParams.get("sb_flow_id");
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code, flowId ? { flowId } : undefined);
     if (error) {
       const normalizedError = `${error.code ?? ""} ${error.message}`.toLowerCase();
       const reason = normalizedError.includes("verifier") || normalizedError.includes("flow state")
@@ -39,8 +46,10 @@ export async function GET(request: NextRequest) {
         : normalizedError.includes("expired") || normalizedError.includes("invalid grant")
           ? "expired_code"
           : "exchange";
-      console.error("Facturo OAuth callback exchange failed", { code: error.code, reason });
-      return oauthFailure(request, reason);
+      console.error(
+        `Facturo OAuth callback exchange failed: code=${error.code ?? "unknown"} reason=${reason} message=${error.message}`,
+      );
+      return oauthFailure(request, reason, error.message);
     }
     if (!data.user) return oauthFailure(request, "exchange");
 
