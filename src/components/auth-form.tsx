@@ -54,10 +54,11 @@ export function SignInForm() {
 export function SignUpForm() {
   const [state, formAction, pending] = useActionState(signUpAction, initialState);
   const [vatStatus, setVatStatus] = useState("no");
+  const [legalConsentAccepted, setLegalConsentAccepted] = useState(false);
 
   return (
     <form action={formAction} className="auth-form">
-      <GoogleSignUpButton />
+      <GoogleSignUpButton legalConsentAccepted={legalConsentAccepted} />
       <div className="signin-divider"><span>ou créez un compte avec votre e-mail</span></div>
       <div className="grid-two">
         <div><label htmlFor="display-name">Votre nom</label><input id="display-name" name="display_name" autoComplete="name" maxLength={100} /></div>
@@ -89,6 +90,7 @@ export function SignUpForm() {
         <div><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" required maxLength={254} /></div>
         <div><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={72} /><span className="field-hint">8 caractères minimum</span></div>
       </div>
+      <LegalConsentCheckbox id="signup-legal-consent" checked={legalConsentAccepted} onChange={setLegalConsentAccepted} />
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       {state.success && <p className="message" role="status">{state.success}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Création…" : "Créer mon compte"}</button>
@@ -96,18 +98,23 @@ export function SignUpForm() {
   );
 }
 
-function GoogleSignUpButton() {
+function GoogleSignUpButton({ legalConsentAccepted }: { legalConsentAccepted: boolean }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function continueWithGoogle() {
+    if (!legalConsentAccepted) {
+      setError("Acceptez la politique de confidentialité et les conditions d’utilisation pour continuer.");
+      return;
+    }
+
     setPending(true);
     setError(null);
     try {
       const supabase = createSupabaseBrowserClient();
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?mode=signup` },
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (oauthError) throw oauthError;
     } catch (cause) {
@@ -125,16 +132,16 @@ function GoogleSignUpButton() {
   </div>;
 }
 
-export function GoogleCompanyRegistrationForm({ email, displayName }: { email: string; displayName: string }) {
+export function OAuthCompanyRegistrationForm({ email, displayName }: { email: string; displayName: string }) {
   const [state, formAction, pending] = useActionState(completeOAuthRegistrationAction, initialState);
   const [vatStatus, setVatStatus] = useState("unknown");
 
   return <form action={formAction} className="auth-form">
     <div className="grid-two">
-      <div><label htmlFor="google-display-name">Votre nom</label><input id="google-display-name" name="display_name" autoComplete="name" defaultValue={displayName} required minLength={2} maxLength={100} /></div>
-      <div><label htmlFor="google-email">Adresse e-mail Google</label><input id="google-email" type="email" value={email} readOnly /></div>
+      <div><label htmlFor="oauth-display-name">Votre nom</label><input id="oauth-display-name" name="display_name" autoComplete="name" defaultValue={displayName} required minLength={2} maxLength={100} /></div>
+      <div><label htmlFor="oauth-email">Adresse e-mail du compte social</label><input id="oauth-email" type="email" value={email} readOnly /></div>
     </div>
-    <p className="field-hint">Ces informations personnelles viennent de votre connexion Google. Complétez séparément les renseignements de votre entreprise.</p>
+    <p className="field-hint">Ces informations personnelles viennent de votre connexion sociale. Complétez séparément les renseignements de votre entreprise.</p>
     <div><label htmlFor="google-company-name">Nom de l’entreprise</label><input id="google-company-name" name="company_name" required minLength={2} maxLength={120} /></div>
     <label htmlFor="google-sector">Secteur d’activité</label>
     <select id="google-sector" name="sector" defaultValue="Autre">
@@ -157,9 +164,40 @@ export function GoogleCompanyRegistrationForm({ email, displayName }: { email: s
       </div>
       {vatStatus === "yes" && <label className="waitlist-choice"><input type="checkbox" name="join_waitlist" /> Rejoindre la liste d’attente DGI</label>}
     </fieldset>
+    <LegalConsentCheckbox id="oauth-legal-consent" />
     {state.error && <p className="auth-error" role="alert">{state.error}</p>}
     <button className="button primary auth-submit" disabled={pending}>{pending ? "Finalisation…" : "Créer mon espace Facturo"}</button>
   </form>;
+}
+
+function LegalConsentCheckbox({
+  id,
+  checked,
+  onChange,
+}: {
+  id: string;
+  checked?: boolean;
+  onChange?: (accepted: boolean) => void;
+}) {
+  return (
+    <div className="legal-consent">
+      <input
+        id={id}
+        name="legal_consent"
+        type="checkbox"
+        required
+        checked={checked}
+        onChange={onChange ? (event) => onChange(event.target.checked) : undefined}
+        aria-labelledby={`${id}-label`}
+      />
+      <p id={`${id}-label`}>
+        J’ai lu et j’approuve la{" "}
+        <Link href="/politique-confidentialite" target="_blank" rel="noreferrer">politique de confidentialité</Link>
+        {" "}et les{" "}
+        <Link href="/conditions-utilisation" target="_blank" rel="noreferrer">conditions d’utilisation</Link>.
+      </p>
+    </div>
+  );
 }
 
 export function ConfirmationResendForm() {
@@ -189,6 +227,7 @@ export function InvitationRegistrationForm({ token, email }: { token: string; em
       <div className="signin-field"><label htmlFor="invite-display-name">Votre nom</label><input id="invite-display-name" name="display_name" autoComplete="name" required minLength={2} maxLength={100} /></div>
       <div className="signin-field"><label htmlFor="invite-email">Adresse e-mail invitée</label><input id="invite-email" name="email" type="email" value={email} readOnly /></div>
       <div className="signin-field"><label htmlFor="invite-password">Créer un mot de passe</label><input id="invite-password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={72} /><span className="field-hint">8 caractères minimum</span></div>
+      <LegalConsentCheckbox id="invite-legal-consent" />
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Création du compte…" : "Rejoindre l’équipe"}</button>
     </form>

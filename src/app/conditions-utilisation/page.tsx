@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/legal-document";
+import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_URL } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Conditions d’utilisation — Facturo",
   description: "Conditions d’accès et d’utilisation du service Facturo.",
+  robots: { index: true, follow: true },
 };
 
 export default function TermsOfUsePage() {
@@ -31,7 +33,7 @@ export default function TermsOfUsePage() {
         Vous devez fournir des informations exactes, garder vos moyens de
         connexion confidentiels et signaler toute utilisation non autorisée de
         votre compte à{" "}
-        <a href="mailto:james.m.nyabenda@gmail.com">james.m.nyabenda@gmail.com</a>.
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
         Vous êtes responsable des actions effectuées depuis votre compte et de
         la gestion des accès accordés aux membres de votre équipe.
       </p>
@@ -78,7 +80,7 @@ export default function TermsOfUsePage() {
         d’atteinte à la sécurité ou de violation des présentes conditions. Vous
         pouvez cesser d’utiliser Facturo et demander la suppression de vos
         données à{" "}
-        <a href="mailto:james.m.nyabenda@gmail.com">james.m.nyabenda@gmail.com</a>,
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>,
         sous réserve des obligations légales de conservation.
       </p>
 
@@ -97,8 +99,11 @@ export default function TermsOfUsePage() {
         Les présentes conditions sont soumises au droit applicable en
         République démocratique du Congo, sous réserve des règles impératives
         qui s’appliquent à l’utilisateur. Pour toute question ou réclamation,
-        contactez James Muhimizi Nyabenda à{" "}
-        <a href="mailto:james.m.nyabenda@gmail.com">james.m.nyabenda@gmail.com</a>.
+        contactez James Muhimizi Nyabenda par e-mail à{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> ou via{" "}
+        <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+          WhatsApp au {CONTACT_PHONE}
+        </a>.
       </p>
 
       <p>

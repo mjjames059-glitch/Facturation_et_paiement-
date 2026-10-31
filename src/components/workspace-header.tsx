@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/actions/auth";
+import { SiteLinks } from "@/components/site-links";
 
 export default function WorkspaceHeader({ email, role }: { email: string; role?: string }) {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export default function WorkspaceHeader({ email, role }: { email: string; role?:
         const active = pathname === href || (href === "/factures" && pathname.startsWith("/factures/"));
         return <Link key={href} href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{label}</Link>;
       })}</nav>
+      <SiteLinks className="workspace-legal-nav" />
       <div className="workspace-user"><span>{email}</span><form action={signOutAction}><button className="button small">Se déconnecter</button></form></div>
     </header>
   );

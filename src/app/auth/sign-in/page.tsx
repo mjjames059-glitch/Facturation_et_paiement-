@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { SignInForm } from "@/components/auth-form";
+import { SiteLinks } from "@/components/site-links";
 
 async function SignInGreeting() {
   const hasSignedInBefore = (await cookies()).has("facturo_seen_login");
@@ -25,6 +26,7 @@ export default function SignInPage() {
           <p className="lead">Connectez-vous à votre espace Facturo.</p>
           <SignInForm />
           <p className="signin-privacy">Vos données restent liées à votre espace professionnel.</p>
+          <SiteLinks className="auth-legal-nav" />
         </section>
       </div>
     </main>

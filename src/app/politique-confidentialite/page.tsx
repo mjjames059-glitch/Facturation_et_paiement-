@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/legal-document";
+import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_URL } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialité — Facturo",
   description: "Comment Facturo collecte, utilise et protège vos données.",
+  robots: { index: true, follow: true },
 };
 
 export default function PrivacyPolicyPage() {
@@ -20,7 +22,8 @@ export default function PrivacyPolicyPage() {
         Facturo est édité par James Muhimizi Nyabenda, porteur du projet
         (activité en création), en République démocratique du Congo. Pour toute
         question, demande d’accès, de correction ou de suppression, écrivez à{" "}
-        <a href="mailto:james.m.nyabenda@gmail.com">james.m.nyabenda@gmail.com</a>.
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> ou contactez-nous
+        sur <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp au {CONTACT_PHONE}</a>.
       </p>
 
       <h2>Données traitées</h2>
@@ -96,9 +99,10 @@ export default function PrivacyPolicyPage() {
       <p>
         Vous pouvez demander l’accès à vos données, leur rectification ou leur
         suppression, et vous opposer à certains traitements lorsque la
-        législation applicable le prévoit. Contactez-nous à l’adresse indiquée
-        plus haut. Vous pouvez également gérer les autorisations accordées à
-        Google ou Facebook depuis les paramètres de ces fournisseurs.
+        législation applicable le prévoit. Contactez-nous par e-mail à l’adresse
+        indiquée plus haut ou sur <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp au {CONTACT_PHONE}</a>. Vous pouvez
+        également gérer les autorisations accordées à Google ou Facebook depuis
+        les paramètres de ces fournisseurs.
       </p>
 
       <h2>Mises à jour</h2>
