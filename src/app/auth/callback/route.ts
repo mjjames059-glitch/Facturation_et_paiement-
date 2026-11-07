@@ -95,13 +95,15 @@ export async function GET(request: NextRequest) {
 
     const destination = isEmailConfirmation
       ? "/auth/sign-in?notice=confirmed"
-      : isRegistration && profile?.company_id
-        ? "/auth/sign-in?notice=exists"
-        : isRegistration
-          ? "/auth/sign-up?mode=oauth"
-          : profile?.company_id
-            ? "/tableau-de-bord"
-            : "/auth/sign-up?mode=oauth";
+      : profileError
+        ? "/auth/confirmation?status=profile"
+        : isRegistration && profile?.company_id
+          ? "/auth/sign-in?notice=exists"
+          : isRegistration
+            ? "/auth/sign-up?mode=oauth"
+            : profile?.company_id
+              ? "/tableau-de-bord"
+              : "/auth/sign-up?mode=oauth";
     const response = NextResponse.redirect(new URL(destination, request.url));
 
     for (const { name, value, options } of cookiesToSet) {

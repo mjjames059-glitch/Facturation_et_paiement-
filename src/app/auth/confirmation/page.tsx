@@ -17,17 +17,17 @@ async function ConfirmationContent({ searchParams }: PageProps) {
     ? "Le fournisseur social a refusé ou interrompu la demande. Recommencez et acceptez la connexion."
     : reason === "missing_email"
       ? "Facebook n’a pas transmis d’adresse e-mail. Autorisez le partage de l’adresse dans Facebook, ou créez votre compte avec votre adresse e-mail."
-    : reason === "redirect_not_allowed"
-      ? "Supabase a refusé l’URL de retour de la connexion. Ajoutez l’URL de callback de cette application dans Authentication → URL Configuration → Redirect URLs, puis réessayez."
-      : reason === "missing_code"
-        ? "Le retour du fournisseur social ne contenait pas le code de connexion attendu. Vérifiez l’URL de retour autorisée dans Supabase."
-        : reason === "pkce"
-          ? "Le navigateur n’a pas conservé l’état temporaire de connexion. Recommencez dans le même navigateur, sur le même domaine Facturo."
-          : reason === "expired_code"
-            ? "Le code de connexion a expiré ou a déjà servi. Recommencez le parcours depuis Facturo."
-            : reason === "server"
-              ? "Le serveur Facturo n’a pas pu terminer le retour OAuth. Consultez les journaux de la fonction /auth/callback dans Vercel."
-              : "Supabase n’a pas pu échanger le code de connexion. Vérifiez que les variables Vercel ciblent le même projet Supabase que celui configuré pour le fournisseur social.";
+      : reason === "redirect_not_allowed"
+        ? "Supabase a refusé l’URL de retour de la connexion. Ajoutez l’URL de callback de cette application dans Authentication → URL Configuration → Redirect URLs, puis réessayez."
+        : reason === "missing_code"
+          ? "Le retour du fournisseur social ne contenait pas le code de connexion attendu. Vérifiez l’URL de retour autorisée dans Supabase."
+          : reason === "pkce"
+            ? "Le navigateur n’a pas conservé l’état temporaire de connexion. Recommencez dans le même navigateur, sur le même domaine Facturo."
+            : reason === "expired_code"
+              ? "Le code de connexion a expiré ou a déjà servi. Recommencez le parcours depuis Facturo."
+              : reason === "server"
+                ? "Le serveur Facturo n’a pas pu terminer le retour OAuth. Consultez les journaux de la fonction /auth/callback dans Vercel."
+                : "Supabase n’a pas pu échanger le code de connexion. Vérifiez que les variables Vercel ciblent le même projet Supabase que celui configuré pour le fournisseur social.";
 
   return (
     <main className="auth-shell signin-shell">

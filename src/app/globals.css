@@ -370,6 +370,7 @@ tr:hover td { background: color-mix(in srgb, var(--bg) 65%, transparent); }
   .payment-form { right: -20px; }
   .public-shell { padding: 14px 10px; }
   .public-invoice { padding: 16px 12px; }
+  .legal-header, .contact-panel { align-items: flex-start; flex-direction: column; }
   .public-details { grid-template-columns: 1fr; gap: 8px; }
   .logo-upload-section { grid-template-columns: 1fr; }
   .rate-form { grid-template-columns: 1fr auto; }
