@@ -110,6 +110,7 @@ export async function resendConfirmationAction(_previousState: AuthActionState, 
 const signInSchema = z.object({ email: z.email().max(254), password: z.string().min(1).max(72) });
 const oauthRegistrationSchema = z.object({
   displayName: z.string().trim().min(2).max(100),
+  password: z.string().min(8).max(72),
   companyName: z.string().trim().min(2).max(120),
   sector: z.string().trim().min(1).max(100),
   servedClientTypes: z.array(z.enum(clientTypes)).min(1),
@@ -125,6 +126,7 @@ export async function completeOAuthRegistrationAction(_previousState: AuthAction
 
   const parsed = oauthRegistrationSchema.safeParse({
     displayName: String(formData.get("display_name") ?? "").trim(),
+    password: String(formData.get("password") ?? ""),
     companyName: String(formData.get("company_name") ?? "").trim(),
     sector: String(formData.get("sector") ?? "").trim(),
     servedClientTypes: formData.getAll("served_client_types").map(String),
@@ -132,7 +134,7 @@ export async function completeOAuthRegistrationAction(_previousState: AuthAction
     joinWaitlist: formData.get("join_waitlist") === "on",
     legalConsent: formData.get("legal_consent") === "on",
   });
-  if (!parsed.success) return { error: "Complétez votre nom, votre entreprise et au moins un type de client." };
+  if (!parsed.success) return { error: "Vérifiez les champs : le nom et l’entreprise doivent contenir au moins 2 caractères, et le mot de passe au moins 8 caractères." };
 
   let supabase;
   try {
@@ -155,6 +157,9 @@ export async function completeOAuthRegistrationAction(_previousState: AuthAction
   const { error: consentError } = await supabase.auth.updateUser({ data: getLegalConsentMetadata() });
   if (consentError) return { error: "Impossible d’enregistrer votre acceptation. Réessayez dans un instant." };
 
+  const { error: passwordError } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (passwordError) return { error: "Impossible d’enregistrer votre mot de passe. Vérifiez qu’il contient au moins 8 caractères et réessayez." };
+
   const { error } = await supabase.rpc("complete_oauth_registration", {
     p_display_name: parsed.data.displayName,
     p_company_name: parsed.data.companyName,
@@ -165,8 +170,53 @@ export async function completeOAuthRegistrationAction(_previousState: AuthAction
   });
   if (error) return { error: "Impossible de terminer l’inscription. Vérifiez que les migrations Facturo sont appliquées dans Supabase." };
 
-  (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
-  redirect("/tableau-de-bord");
+  const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+  if (signOutError) {
+    console.error("Facturo social registration sign-out failed", {
+      code: signOutError.code ?? "unknown",
+      message: signOutError.message,
+    });
+    return { error: "Votre espace a été créé, mais la déconnexion n’a pas abouti. Déconnectez-vous puis connectez-vous avec votre adresse e-mail et votre mot de passe." };
+  }
+
+  redirect("/auth/sign-in?notice=registered");
+}
+
+export async function startOAuthRegistrationAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  if (formData.get("legal_consent") !== "on") {
+    return { error: "Acceptez la politique de confidentialité et les conditions d’utilisation pour continuer." };
+  }
+
+  const provider = z.enum(["google", "facebook"]).safeParse(String(formData.get("provider") ?? ""));
+  if (!provider.success) return { error: "Choisissez Google ou Facebook pour continuer." };
+
+  let supabase;
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return { error: "Supabase n’est pas configuré. Réessayez dans un instant." };
+  }
+
+  const appUrl = getAppUrl();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: provider.data,
+    options: {
+      redirectTo: new URL("/auth/callback", appUrl).toString(),
+      ...(provider.data === "facebook" ? { scopes: "email,public_profile" } : {}),
+    },
+  });
+  if (error || !data.url) {
+    return { error: "Connexion sociale indisponible. Vérifiez la configuration Google ou Facebook dans Supabase." };
+  }
+
+  (await cookies()).set("facturo_oauth_registration", "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 600,
+  });
+  redirect(data.url);
 }
 
 export async function signInAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
@@ -227,12 +277,23 @@ async function startProviderSignIn(provider: "google" | "facebook"): Promise<Aut
   try { supabase = await createSupabaseServerClient(); }
   catch { return { error: "Supabase n’est pas configuré." }; }
   const appUrl = getAppUrl();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: new URL("/auth/callback", appUrl).toString() },
-  });
-  if (error || !data.url) return { error: "Connexion sociale indisponible. Vérifiez sa configuration dans Supabase." };
-  redirect(data.url);
+  let authorizationUrl: string | null = null;
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: new URL("/auth/callback", appUrl).toString(),
+        ...(provider === "facebook" ? { scopes: "email,public_profile" } : {}),
+      },
+    });
+    if (error) return { error: "Connexion sociale indisponible. Vérifiez sa configuration dans Supabase." };
+    authorizationUrl = data.url;
+  } catch (error) {
+    console.error(`Facturo ${provider} sign-in could not start`, error);
+    return { error: "Le service de connexion sociale est momentanément indisponible. Réessayez dans un instant." };
+  }
+  if (!authorizationUrl) return { error: "Connexion sociale indisponible. Vérifiez sa configuration dans Supabase." };
+  redirect(authorizationUrl);
 }
 
 export async function signInWithGoogleAction(_previousState: AuthActionState): Promise<AuthActionState> {

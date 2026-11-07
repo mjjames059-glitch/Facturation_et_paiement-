@@ -2,43 +2,27 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { completeOAuthRegistrationAction, resendConfirmationAction, signInAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
+import { completeOAuthRegistrationAction, resendConfirmationAction, signInAction, signInWithFacebookAction, signInWithGoogleAction, signUpAction, startOAuthRegistrationAction, type AuthActionState } from "@/app/actions/auth";
 import { acceptTeamInvitationAction, type TeamActionState } from "@/app/actions/team";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const initialState: AuthActionState = {};
 
 export function SignInForm() {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
-  const [oauthPending, setOauthPending] = useState<"google" | "facebook" | null>(null);
-  const [oauthError, setOauthError] = useState<string | null>(null);
-
-  async function signInWithProvider(provider: "google" | "facebook") {
-    setOauthPending(provider);
-    setOauthError(null);
-    try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) throw error;
-    } catch (error) {
-      setOauthError(error instanceof Error ? error.message : "La connexion OAuth n’a pas pu démarrer.");
-      setOauthPending(null);
-    }
-  }
+  const [googleState, googleAction, googlePending] = useActionState(signInWithGoogleAction, initialState);
+  const [facebookState, facebookAction, facebookPending] = useActionState(signInWithFacebookAction, initialState);
+  const oauthPending = googlePending || facebookPending;
 
   return (
     <div className="auth-form signin-form">
       <section className="signin-provider-section" aria-label="Connexion avec Google ou Facebook">
         <p className="signin-method-title">Connexion avec un compte social</p>
         <div className="auth-providers">
-          <button className="button provider-button" type="button" onClick={() => void signInWithProvider("google")} disabled={oauthPending !== null}><span className="provider-mark google-mark">G</span>{oauthPending === "google" ? "Connexion…" : "Continuer avec Google"}</button>
-          <button className="button provider-button" type="button" onClick={() => void signInWithProvider("facebook")} disabled={oauthPending !== null}><span className="provider-mark facebook-mark">f</span>{oauthPending === "facebook" ? "Connexion…" : "Continuer avec Facebook"}</button>
+          <form action={googleAction}><button className="button provider-button" type="submit" disabled={oauthPending}><span className="provider-mark google-mark">G</span>{googlePending ? "Connexion…" : "Continuer avec Google"}</button></form>
+          <form action={facebookAction}><button className="button provider-button" type="submit" disabled={oauthPending}><span className="provider-mark facebook-mark">f</span>{facebookPending ? "Connexion…" : "Continuer avec Facebook"}</button></form>
         </div>
       </section>
-      {oauthError && <p className="auth-error" role="alert">{oauthError}</p>}
+      {(googleState.error || facebookState.error) && <p className="auth-error" role="alert">{googleState.error ?? facebookState.error}</p>}
       <div className="signin-divider"><span>ou avec votre e-mail</span></div>
       <form action={formAction} className="signin-credentials">
         <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
@@ -57,10 +41,11 @@ export function SignUpForm() {
   const [legalConsentAccepted, setLegalConsentAccepted] = useState(false);
 
   return (
-    <form action={formAction} className="auth-form">
-      <GoogleSignUpButton legalConsentAccepted={legalConsentAccepted} />
+    <div className="auth-form">
+      <OAuthSignUpOptions legalConsentAccepted={legalConsentAccepted} />
       <div className="signin-divider"><span>ou créez un compte avec votre e-mail</span></div>
-      <div className="grid-two">
+      <form action={formAction}>
+        <div className="grid-two">
         <div><label htmlFor="display-name">Votre nom</label><input id="display-name" name="display_name" autoComplete="name" maxLength={100} /></div>
         <div><label htmlFor="company-name">Nom de l’entreprise</label><input id="company-name" name="company_name" placeholder="Ex. Traiteur Mama Zita" required minLength={2} maxLength={120} /></div>
       </div>
@@ -94,47 +79,36 @@ export function SignUpForm() {
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       {state.success && <p className="message" role="status">{state.success}</p>}
       <button className="button primary auth-submit" disabled={pending}>{pending ? "Création…" : "Créer mon compte"}</button>
-    </form>
+      </form>
+    </div>
   );
 }
 
-function GoogleSignUpButton({ legalConsentAccepted }: { legalConsentAccepted: boolean }) {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function continueWithGoogle() {
-    if (!legalConsentAccepted) {
-      setError("Acceptez la politique de confidentialité et les conditions d’utilisation pour continuer.");
-      return;
-    }
-
-    setPending(true);
-    setError(null);
-    try {
-      const supabase = createSupabaseBrowserClient();
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (oauthError) throw oauthError;
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Connexion Google indisponible. Réessayez.");
-      setPending(false);
-    }
-  }
-
+function OAuthSignUpOptions({ legalConsentAccepted }: { legalConsentAccepted: boolean }) {
+  const [state, formAction, pending] = useActionState(startOAuthRegistrationAction, initialState);
   return <div>
-    <button className="button provider-button" type="button" onClick={() => void continueWithGoogle()} disabled={pending}>
-      <span className="provider-mark google-mark">G</span>{pending ? "Connexion…" : "Utiliser Google pour mes informations personnelles"}
-    </button>
-    <p className="field-hint">Le nom et l’adresse e-mail viennent de Google. Vous saisirez les informations de votre entreprise ensuite.</p>
-    {error && <p className="auth-error" role="alert">{error}</p>}
+    <form action={formAction}>
+      <input type="hidden" name="legal_consent" value={legalConsentAccepted ? "on" : ""} />
+      <div className="auth-providers">
+        <button className="button provider-button" type="submit" name="provider" value="google" disabled={pending}>
+          <span className="provider-mark google-mark">G</span>{pending ? "Connexion…" : "Continuer avec Google"}
+        </button>
+        <button className="button provider-button" type="submit" name="provider" value="facebook" disabled={pending}>
+          <span className="provider-mark facebook-mark">f</span>{pending ? "Connexion…" : "Continuer avec Facebook"}
+        </button>
+      </div>
+    </form>
+    <p className="field-hint">Google ou Facebook préremplit votre nom et votre adresse e-mail. Vous créerez un mot de passe et saisirez les informations de votre entreprise ensuite.</p>
+    {state.error && <p className="auth-error" role="alert">{state.error}</p>}
   </div>;
 }
 
 export function OAuthCompanyRegistrationForm({ email, displayName }: { email: string; displayName: string }) {
   const [state, formAction, pending] = useActionState(completeOAuthRegistrationAction, initialState);
   const [vatStatus, setVatStatus] = useState("unknown");
+  if (!email) {
+    return <p className="auth-error" role="alert">Le fournisseur social n’a pas transmis votre adresse e-mail. Recommencez avec un compte qui la partage, ou créez votre compte avec votre adresse e-mail.</p>;
+  }
 
   return <form action={formAction} className="auth-form">
     <div className="grid-two">
@@ -142,6 +116,7 @@ export function OAuthCompanyRegistrationForm({ email, displayName }: { email: st
       <div><label htmlFor="oauth-email">Adresse e-mail du compte social</label><input id="oauth-email" type="email" value={email} readOnly /></div>
     </div>
     <p className="field-hint">Ces informations personnelles viennent de votre connexion sociale. Complétez séparément les renseignements de votre entreprise.</p>
+    <div><label htmlFor="oauth-password">Créer un mot de passe</label><input id="oauth-password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={72} /><span className="field-hint">8 caractères minimum. Vous pourrez ensuite vous connecter avec votre adresse e-mail et ce mot de passe.</span></div>
     <div><label htmlFor="google-company-name">Nom de l’entreprise</label><input id="google-company-name" name="company_name" required minLength={2} maxLength={120} /></div>
     <label htmlFor="google-sector">Secteur d’activité</label>
     <select id="google-sector" name="sector" defaultValue="Autre">

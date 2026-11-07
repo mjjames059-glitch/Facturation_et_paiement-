@@ -15,6 +15,8 @@ async function ConfirmationContent({ searchParams }: PageProps) {
   const hasProblem = linkProblem || oauthProblem || profileProblem || sessionProblem;
   const oauthMessage = reason === "provider"
     ? "Le fournisseur social a refusé ou interrompu la demande. Recommencez et acceptez la connexion."
+    : reason === "missing_email"
+      ? "Facebook n’a pas transmis d’adresse e-mail. Autorisez le partage de l’adresse dans Facebook, ou créez votre compte avec votre adresse e-mail."
     : reason === "redirect_not_allowed"
       ? "Supabase a refusé l’URL de retour de la connexion. Ajoutez l’URL de callback de cette application dans Authentication → URL Configuration → Redirect URLs, puis réessayez."
       : reason === "missing_code"

@@ -4,7 +4,8 @@ Facturo est un SaaS de facturation et de suivi des paiements pour les petites et
 
 ## Fonctionnalités
 
-- Inscription et connexion par e-mail avec Supabase Auth.
+- Inscription et connexion par e-mail/mot de passe ou avec Google et Facebook via Supabase Auth.
+- Inscription sociale avec récupération du nom et de l’adresse e-mail, création d’un mot de passe, puis connexion explicite avant l’accès au tableau de bord.
 - Profil entreprise, logo et taux de change USD/CDF.
 - Gestion des clients et du catalogue de produits et services.
 - Factures USD ou CDF, lignes libres ou issues du catalogue, numérotation séquentielle par entreprise.
@@ -44,7 +45,10 @@ Next.js 16 demande Node.js 20.9 ou plus récent. Consultez les [prérequis Next.
    - `http://localhost:3000/auth/callback`
    - `https://VOTRE-DOMAINE-VERCEL/auth/callback`
 
-5. Vérifiez que la confirmation par e-mail est activée pour le parcours d’inscription. Le lien de confirmation revient sur `/auth/callback`.
+5. Vérifiez que la confirmation par e-mail est activée pour le parcours d’inscription. Après confirmation, l’utilisateur revient à la page de connexion.
+6. Dans **Authentication → Sign In / Providers**, activez Google et/ou Facebook et renseignez les identifiants de vos applications. Pour Facebook, autorisez l’accès à l’adresse e-mail et utilisez l’URL de callback Supabase affichée dans la configuration du fournisseur. Facturo demande les permissions `email` et `public_profile`.
+
+Lors d’une inscription avec Google ou Facebook, Facturo récupère le nom et l’adresse e-mail, demande un mot de passe et les renseignements de l’entreprise, puis renvoie l’utilisateur à la page de connexion. Les prochaines connexions peuvent ainsi se faire avec l’adresse e-mail et ce mot de passe.
 
 Le CLI Supabase est lancé avec `npx supabase`; si le CLI n’est pas déjà présent, npm le récupère pour la commande. Pour utiliser l’environnement Supabase local, installez Docker Desktop puis suivez le [guide du CLI Supabase](https://supabase.com/docs/guides/local-development/cli/getting-started).
 

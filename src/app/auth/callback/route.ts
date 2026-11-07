@@ -7,7 +7,15 @@ function oauthFailure(request: NextRequest, reason: string, detail?: string) {
   url.searchParams.set("status", "oauth");
   url.searchParams.set("reason", reason);
   if (detail) url.searchParams.set("detail", detail);
-  return NextResponse.redirect(url);
+  const response = NextResponse.redirect(url);
+  response.cookies.set("facturo_oauth_registration", "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
 }
 
 export async function GET(request: NextRequest) {
@@ -67,19 +75,54 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const destination = profile?.company_id ? "/tableau-de-bord" : "/auth/sign-up?mode=oauth";
+    const isRegistration = request.cookies.get("facturo_oauth_registration")?.value === "1";
+    if (isRegistration && !data.user.email) {
+      return oauthFailure(request, "missing_email");
+    }
+
+    const isEmailConfirmation = data.user.app_metadata?.provider === "email";
+    const shouldSignOut = isEmailConfirmation || (isRegistration && Boolean(profile?.company_id));
+    if (shouldSignOut) {
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+      if (signOutError) {
+        console.error("Facturo auth callback sign-out failed", {
+          code: signOutError.code ?? "unknown",
+          message: signOutError.message,
+        });
+        return oauthFailure(request, "server", "La session n’a pas pu être fermée.");
+      }
+    }
+
+    const destination = isEmailConfirmation
+      ? "/auth/sign-in?notice=confirmed"
+      : isRegistration && profile?.company_id
+        ? "/auth/sign-in?notice=exists"
+        : isRegistration
+          ? "/auth/sign-up?mode=oauth"
+          : profile?.company_id
+            ? "/tableau-de-bord"
+            : "/auth/sign-up?mode=oauth";
     const response = NextResponse.redirect(new URL(destination, request.url));
 
     for (const { name, value, options } of cookiesToSet) {
       response.cookies.set(name, value, options);
     }
-    response.cookies.set("facturo_seen_login", "1", {
+    response.cookies.set("facturo_oauth_registration", "", {
       httpOnly: true,
       sameSite: "lax",
       secure: request.nextUrl.protocol === "https:",
       path: "/",
-      maxAge: 60 * 60 * 24 * 365 * 5,
+      maxAge: 0,
     });
+    if (destination === "/tableau-de-bord") {
+      response.cookies.set("facturo_seen_login", "1", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: request.nextUrl.protocol === "https:",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365 * 5,
+      });
+    }
     return response;
   } catch (error) {
     console.error("Facturo OAuth callback failed before session completion", {
