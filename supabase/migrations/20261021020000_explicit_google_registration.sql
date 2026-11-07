@@ -1,4 +1,8 @@
 -- Les nouveaux utilisateurs OAuth doivent compléter explicitement leur profil Facturo.
+-- Une ligne de profil factice avec company_id nul permet de conserver l’identité Auth
+-- et d’attendre la création explicite de l’entreprise lors du formulaire de complétion.
+alter table public.profiles alter column company_id drop not null;
+
 create or replace function public.handle_new_auth_user()
 returns trigger
 language plpgsql
@@ -41,6 +45,10 @@ begin
     -- OAuth sans inscription explicite : conserver l'identité Auth, sans créer
     -- d'entreprise par défaut. Le callback proposera ensuite le formulaire Facturo.
     if v_company_name is null then
+      if not exists (select 1 from public.profiles where user_id = new.id) then
+        insert into public.profiles (user_id, company_id, display_name, role)
+        values (new.id, null, coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), nullif(trim(new.raw_user_meta_data ->> 'full_name'), '')), v_role);
+      end if;
       return new;
     end if;
 
@@ -69,15 +77,23 @@ begin
     end if;
   end if;
 
-  insert into public.profiles (user_id, company_id, display_name, role)
-  values (
-    new.id,
-    v_company_id,
-    coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), nullif(trim(new.raw_user_meta_data ->> 'full_name'), '')),
-    v_role
-  );
+  if not exists (select 1 from public.profiles where user_id = new.id) then
+    insert into public.profiles (user_id, company_id, display_name, role)
+    values (
+      new.id,
+      v_company_id,
+      coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), nullif(trim(new.raw_user_meta_data ->> 'full_name'), '')),
+      v_role
+    );
+  else
+    update public.profiles
+    set display_name = coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''), display_name),
+        company_id = coalesce(v_company_id, company_id),
+        role = v_role
+    where user_id = new.id;
+  end if;
 
-  if v_invitation_id is null then
+  if v_invitation_id is null and v_company_id is not null then
     insert into public.settings (company_id, exchange_rate) values (v_company_id, 2800);
   end if;
 
@@ -107,11 +123,15 @@ as $$
 declare
   v_user_id uuid := auth.uid();
   v_company_id uuid;
+  v_profile_exists boolean;
 begin
   if v_user_id is null then
     raise exception 'Authentification requise' using errcode = '42501';
   end if;
-  if exists (select 1 from public.profiles where user_id = v_user_id) then
+
+  select exists (select 1 from public.profiles where user_id = v_user_id and company_id is not null)
+  into v_profile_exists;
+  if v_profile_exists then
     raise exception 'Un profil Facturo existe déjà pour cet utilisateur' using errcode = '23505';
   end if;
   if nullif(trim(p_display_name), '') is null or length(trim(p_display_name)) > 100 then
@@ -142,8 +162,17 @@ begin
     where id = v_company_id;
   end if;
 
-  insert into public.profiles (user_id, company_id, display_name)
-  values (v_user_id, v_company_id, trim(p_display_name));
+  if exists (select 1 from public.profiles where user_id = v_user_id) then
+    update public.profiles
+    set company_id = v_company_id,
+        display_name = trim(p_display_name),
+        role = 'owner'
+    where user_id = v_user_id;
+  else
+    insert into public.profiles (user_id, company_id, display_name, role)
+    values (v_user_id, v_company_id, trim(p_display_name), 'owner');
+  end if;
+
   insert into public.settings (company_id, exchange_rate)
   values (v_company_id, 2800)
   on conflict (company_id) do nothing;
