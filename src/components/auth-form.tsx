@@ -7,18 +7,21 @@ import { acceptTeamInvitationAction, type TeamActionState } from "@/app/actions/
 
 const initialState: AuthActionState = {};
 
-export function SignInForm() {
+export function SignInForm({ audience = "client" }: { audience?: "client" | "platform-admin" }) {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
 
   return (
     <div className="auth-form signin-form">
       <form action={formAction} className="signin-credentials">
+        <input type="hidden" name="audience" value={audience} />
         <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
         <div className="signin-field"><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required /></div>
         {state.error && <p className="auth-error" role="alert">{state.error}</p>}
-        <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : "Se connecter"}</button>
+        <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : audience === "platform-admin" ? "Se connecter à l’administration" : "Se connecter à mon espace"}</button>
       </form>
-      <p className="auth-switch">Vous n’avez pas encore de compte ? <Link href="/auth/sign-up">Créer un compte</Link></p>
+      {audience === "client"
+        ? <p className="auth-switch">Vous n’avez pas encore de compte ? <Link href="/auth/sign-up">Créer un compte</Link></p>
+        : <p className="auth-switch">Vous êtes client Facturo ? <Link href="/auth/sign-in">Connexion client</Link></p>}
     </div>
   );
 }

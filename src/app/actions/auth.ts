@@ -212,6 +212,9 @@ export async function startOAuthRegistrationAction(_previousState: AuthActionSta
 }
 
 export async function signInAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const audience = z.enum(["client", "platform-admin"]).safeParse(String(formData.get("audience") ?? "client"));
+  if (!audience.success) return { error: "Type de connexion invalide." };
+
   const parsed = signInSchema.safeParse({
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     password: String(formData.get("password") ?? ""),
@@ -260,6 +263,46 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
     return { error: "Adresse e-mail ou mot de passe incorrect." };
   }
 
+  if (audience.data === "platform-admin") {
+    const { data: isPlatformAdmin, error: authorizationError } = await supabase.rpc("is_platform_admin");
+    if (authorizationError) {
+      console.error("Facturo platform admin login authorization failed", { code: authorizationError.code });
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+      if (signOutError) {
+        console.error("Facturo admin authorization cleanup failed", { code: signOutError.code });
+      }
+      return { error: "L’autorisation administrateur n’a pas pu être vérifiée. Réessayez." };
+    }
+    if (!isPlatformAdmin) {
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+      if (signOutError) {
+        console.error("Facturo rejected admin login sign-out failed", { code: signOutError.code });
+        return { error: "Ce compte n’a pas l’autorisation administrateur. Déconnectez-vous puis réessayez avec le compte plateforme." };
+      }
+      return { error: "Ce compte n’a pas l’autorisation administrateur. Utilisez la connexion client ou demandez l’accès plateforme à l’administrateur Facturo." };
+    }
+    (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
+    redirect("/admin");
+  }
+
+  const { data: companyId, error: companyError } = await supabase.rpc("current_company_id");
+  if (companyError) {
+    console.error("Facturo client login workspace check failed", { code: companyError.code });
+    const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+    if (signOutError) {
+      console.error("Facturo client login cleanup failed", { code: signOutError.code });
+    }
+    return { error: "Impossible de vérifier l’espace client associé à ce compte. Réessayez." };
+  }
+  if (!companyId) {
+    const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+    if (signOutError) {
+      console.error("Facturo non-client login cleanup failed", { code: signOutError.code });
+      return { error: "Aucun espace client n’est associé à ce compte et la déconnexion n’a pas abouti. Déconnectez-vous puis utilisez la connexion administrateur si nécessaire." };
+    }
+    return { error: "Aucun espace client n’est associé à ce compte. Si vous êtes administrateur Facturo, utilisez la connexion administrateur." };
+  }
+
   (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
   redirect("/tableau-de-bord");
 }
@@ -268,4 +311,10 @@ export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   redirect("/auth/sign-in");
+}
+
+export async function signOutPlatformAdminAction() {
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
+  redirect("/admin/login");
 }

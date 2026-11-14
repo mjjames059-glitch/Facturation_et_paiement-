@@ -108,7 +108,7 @@ npm run build
 
 Les factures sont créées par une fonction SQL transactionnelle : l’incrément du numéro est annulé si la création échoue. Les brouillons ne sont pas accessibles par leur lien public. Les routes `/f/[token]` et `/f/[token]/pdf` n’exposent que les factures envoyées ou payées.
 
-### Initialiser l’administration Facturo
+### Accéder à l’administration Facturo
 
 Après application des migrations, créez un compte utilisateur normal, puis récupérez son **UUID Auth** dans **Supabase → Authentication → Users**. Dans le SQL Editor Supabase, accordez explicitement le rôle plateforme avec cet UUID :
 
@@ -119,5 +119,7 @@ on conflict (user_id) do update set is_active = true;
 ```
 
 Cette opération manuelle est requise pour le premier administrateur. Les rôles d’équipe ou une adresse e-mail publique ne donnent jamais accès à `/admin`. N’exposez pas la clé `service_role` dans l’application ; les variables d’environnement client nécessaires sont uniquement `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` et `NEXT_PUBLIC_APP_URL`.
+
+Les clients se connectent sur `/auth/sign-in`. Les administrateurs utilisent la page séparée `/admin/login`, avec le même compte Auth dont l’UUID a été autorisé ci-dessus. L’autorisation est contrôlée côté serveur ; les utilisateurs qui n’ont pas le rôle plateforme ne peuvent pas accéder à l’administration. Une session client active doit être déconnectée avant de se connecter avec un autre compte administrateur.
 
 L’espace d’administration `/admin` permet de rechercher les entreprises, filtrer par forfait ou statut, consulter les usages et modifier un forfait ou un statut. Ces modifications sont vérifiées côté serveur et consignées dans `platform_audit_events`.

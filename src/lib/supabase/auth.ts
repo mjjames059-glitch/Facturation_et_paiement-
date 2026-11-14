@@ -63,7 +63,7 @@ export async function requirePlatformAdmin() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
-    redirect("/auth/sign-in");
+    redirect("/admin/login");
   }
 
   const { data: isAdmin, error: adminError } = await supabase.rpc("is_platform_admin");
@@ -71,7 +71,7 @@ export async function requirePlatformAdmin() {
     console.error("Facturo platform admin check failed", { code: adminError.code });
     throw new Error("Impossible de vérifier les autorisations administrateur.");
   }
-  if (!isAdmin) redirect("/tableau-de-bord");
+  if (!isAdmin) redirect("/admin/login?notice=unauthorized");
 
   return { supabase, user: data.user };
 }

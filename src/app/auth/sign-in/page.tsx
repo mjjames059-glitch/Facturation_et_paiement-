@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { SignInForm } from "@/components/auth-form";
 import { SiteLinks } from "@/components/site-links";
+
+export const metadata: Metadata = {
+  title: "Connexion client | Facturo",
+  description: "Connectez-vous à votre espace client Facturo.",
+};
 
 async function SignInGreeting() {
   const hasSignedInBefore = (await cookies()).has("facturo_seen_login");
@@ -37,10 +43,11 @@ export default function SignInPage(props: PageProps) {
         </section>
         <section className="auth-card signin-card">
           <Suspense fallback={<p className="eyebrow">Bienvenue sur Facturo</p>}><SignInGreeting /></Suspense>
-          <h2>Connexion</h2>
+          <h2>Connexion client</h2>
           <p className="lead">Connectez-vous à votre espace Facturo.</p>
           <Suspense fallback={null}><SignInNotice {...props} /></Suspense>
           <SignInForm />
+          <p className="auth-switch admin-login-link">Vous gérez la plateforme Facturo ? <Link href="/admin/login">Connexion administrateur</Link></p>
           <p className="signin-privacy">Vos données restent liées à votre espace professionnel.</p>
           <SiteLinks className="auth-legal-nav" />
         </section>
