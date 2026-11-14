@@ -1,23 +1,34 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateCompanyProfileAction, updateExchangeRateAction, updatePersonalEmailAction, updatePersonalProfileAction, uploadCompanyLogoAction, type SettingsActionState } from "@/app/actions/settings";
+import { updateCompanyProfileAction, updateExchangeRateAction, updatePersonalEmailAction, updatePersonalProfileAction, updateWorkspacePreferencesAction, uploadCompanyLogoAction, type SettingsActionState } from "@/app/actions/settings";
 
 type CompanySettings = {
   company_name: string;
   legal_name: string | null;
+  contact_email: string | null;
   address: string | null;
   phone: string | null;
   rccm: string | null;
   nif: string | null;
 };
 
+type WorkspacePreferences = {
+  brand_primary_color: string;
+  brand_accent_color: string;
+  locale: string;
+  default_currency: "USD" | "CDF";
+  invoice_due_days: number;
+  invoice_footer: string;
+};
+
 const initialState: SettingsActionState = {};
 
-export default function SettingsScreen({ company, logoUrl, exchangeRate, loadError, canManage, role, email, personalProfile }: { company: CompanySettings; logoUrl: string | null; exchangeRate: string; loadError: boolean; canManage: boolean; role: string; email: string; personalProfile: { display_name: string | null; phone: string | null } }) {
+export default function SettingsScreen({ company, logoUrl, exchangeRate, preferences, loadError, canManage, role, email, personalProfile }: { company: CompanySettings; logoUrl: string | null; exchangeRate: string; preferences: WorkspacePreferences; loadError: boolean; canManage: boolean; role: string; email: string; personalProfile: { display_name: string | null; phone: string | null } }) {
   const [personalState, personalAction, personalPending] = useActionState(updatePersonalProfileAction, initialState);
   const [emailState, emailAction, emailPending] = useActionState(updatePersonalEmailAction, initialState);
   const [profileState, profileAction, profilePending] = useActionState(updateCompanyProfileAction, initialState);
+  const [preferencesState, preferencesAction, preferencesPending] = useActionState(updateWorkspacePreferencesAction, initialState);
   const [logoState, logoAction, logoPending] = useActionState(uploadCompanyLogoAction, initialState);
   const [rateState, rateAction, ratePending] = useActionState(updateExchangeRateAction, initialState);
 
@@ -48,10 +59,11 @@ export default function SettingsScreen({ company, logoUrl, exchangeRate, loadErr
       {canManage && <>
       <section className="panel">
         <h2>Profil entreprise</h2>
-        <p className="muted">Nom du compte : {company.company_name}</p>
         <form action={profileAction}>
           <div className="grid-two">
+            <div><label htmlFor="company-name">Nom affiché</label><input id="company-name" name="company_name" defaultValue={company.company_name} required minLength={2} maxLength={120} /></div>
             <div><label htmlFor="legal-name">Raison sociale</label><input id="legal-name" name="legal_name" defaultValue={company.legal_name ?? company.company_name} maxLength={160} /></div>
+            <div><label htmlFor="company-email">E-mail professionnel</label><input id="company-email" name="contact_email" type="email" defaultValue={company.contact_email ?? ""} maxLength={254} /></div>
             <div><label htmlFor="company-phone">Téléphone</label><input id="company-phone" name="phone" type="tel" defaultValue={company.phone ?? ""} maxLength={40} /></div>
             <div><label htmlFor="company-address">Adresse</label><input id="company-address" name="address" defaultValue={company.address ?? ""} maxLength={300} /></div>
             <div><label htmlFor="company-rccm">RCCM</label><input id="company-rccm" name="rccm" defaultValue={company.rccm ?? ""} maxLength={80} /></div>
@@ -71,6 +83,24 @@ export default function SettingsScreen({ company, logoUrl, exchangeRate, loadErr
             <div className="inline-action"><button className="button" disabled={logoPending}>{logoPending ? "Téléversement…" : "Mettre à jour le logo"}</button></div>
           </form>
         </div>
+      </section>
+      <section className="panel">
+        <h2>Identité visuelle et factures</h2>
+        <p className="muted">Ces préférences sont propres à cet espace et apparaissent sur les factures partagées et leurs PDF.</p>
+        <form action={preferencesAction}>
+          <div className="grid-two">
+            <div><label htmlFor="brand-primary">Couleur principale</label><input id="brand-primary" name="brand_primary_color" type="color" defaultValue={preferences.brand_primary_color} /></div>
+            <div><label htmlFor="brand-accent">Couleur secondaire</label><input id="brand-accent" name="brand_accent_color" type="color" defaultValue={preferences.brand_accent_color} /></div>
+            <div><label htmlFor="workspace-locale">Langue et format de date</label><select id="workspace-locale" name="locale" defaultValue={preferences.locale}><option value="fr-CD">Français — RDC</option><option value="fr-FR">Français — France</option><option value="en-US">English — US</option></select></div>
+            <div><label htmlFor="default-currency">Devise par défaut des factures</label><select id="default-currency" name="default_currency" defaultValue={preferences.default_currency}><option value="USD">Dollar (USD)</option><option value="CDF">Franc congolais (CDF)</option></select></div>
+            <div><label htmlFor="invoice-due-days">Délai de paiement par défaut (jours)</label><input id="invoice-due-days" name="invoice_due_days" type="number" min="0" max="365" step="1" defaultValue={preferences.invoice_due_days} required /></div>
+          </div>
+          <label htmlFor="invoice-footer">Texte légal ou pied de facture</label>
+          <textarea id="invoice-footer" name="invoice_footer" rows={3} maxLength={2000} defaultValue={preferences.invoice_footer} />
+          {preferencesState.error && <p className="auth-error" role="alert">{preferencesState.error}</p>}
+          {preferencesState.success && <p className="message" role="status">{preferencesState.success}</p>}
+          <div className="inline-action"><button className="button primary" disabled={preferencesPending}>{preferencesPending ? "Enregistrement…" : "Enregistrer l’identité visuelle"}</button></div>
+        </form>
       </section>
       <section className="panel">
         <h2>Taux de change</h2>

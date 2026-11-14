@@ -18,7 +18,7 @@ async function HelpData() {
 
   return (
     <>
-      <WorkspaceHeader email={context.user.email} role={context.role} />
+      <WorkspaceHeader email={context.user.email} role={context.role} workspaces={context.workspaces} />
       <SupportScreen senderName={context.profile.display_name ?? ""} senderEmail={context.user.email} />
     </>
   );

@@ -128,7 +128,7 @@ function buildRecentActivity(
 
 async function DashboardData() {
   await connection();
-  const { supabase, user, role } = await requireAuthenticatedCompany();
+  const { supabase, user, role, workspaces } = await requireAuthenticatedCompany();
   const [invoiceResult, clientResult, companyResult, settingsResult, tokenResult, paymentsResult] = await Promise.all([
     supabase.from("invoice_status_summary").select("id, client_id, invoice_number, currency, issued_at, due_date, total_amount, paid_amount, stored_status, effective_status").order("issued_at", { ascending: false }),
     supabase.from("clients").select("id, name, client_type, whatsapp_phone"),
@@ -192,7 +192,7 @@ async function DashboardData() {
   const trend = buildMonthlyTrend(invoices, payments, rateUnits);
   const recentActivity = buildRecentActivity(invoices, payments, clientById, rateUnits);
 
-  return <><WorkspaceHeader email={user.email ?? ""} role={role} /><DashboardScreen role={role}
+  return <><WorkspaceHeader email={user.email ?? ""} role={role} workspaces={workspaces} /><DashboardScreen role={role}
     companyName={companyName}
     billed={billed.toString()}
     collected={collected.toString()}

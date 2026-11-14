@@ -13,14 +13,15 @@ function todayInKinshasa() {
 
 async function InvoiceFormData() {
   await connection();
-  const { supabase, user, role } = await requireAuthenticatedCompany();
+  const { supabase, user, role, workspaces } = await requireAuthenticatedCompany();
   if (role === "viewer") redirect("/factures");
-  const [{ data: clients, error: clientsError }, { data: catalog, error: catalogError }] = await Promise.all([
+  const [{ data: clients, error: clientsError }, { data: catalog, error: catalogError }, { data: settings, error: settingsError }] = await Promise.all([
     supabase.from("clients").select("id, name, client_type").order("name"),
     supabase.from("catalog_items").select("id, name, price_amount, currency, unit").eq("is_active", true).order("name"),
+    supabase.from("settings").select("default_currency, invoice_due_days").maybeSingle(),
   ]);
 
-  return <><WorkspaceHeader email={user.email ?? ""} role={role} /><InvoiceForm clients={clients ?? []} catalog={catalog ?? []} today={todayInKinshasa()} loadError={Boolean(clientsError || catalogError)} /></>;
+  return <><WorkspaceHeader email={user.email ?? ""} role={role} workspaces={workspaces} /><InvoiceForm clients={clients ?? []} catalog={catalog ?? []} today={todayInKinshasa()} defaultCurrency={settings?.default_currency ?? "USD"} invoiceDueDays={settings?.invoice_due_days ?? 30} loadError={Boolean(clientsError || catalogError || settingsError)} /></>;
 }
 
 export default function NewInvoicePage() {

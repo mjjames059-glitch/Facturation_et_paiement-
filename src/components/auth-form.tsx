@@ -175,3 +175,17 @@ export function InvitationRegistrationForm({ token, email }: { token: string; em
     </form>
   );
 }
+
+export function ExistingMemberInvitationForm({ token }: { token: string }) {
+  const [state, formAction, pending] = useActionState(acceptTeamInvitationAction, {});
+
+  return (
+    <form action={formAction} className="auth-form">
+      <input type="hidden" name="token" value={token} />
+      {state.error && <p className="auth-error" role="alert">{state.error}</p>}
+      <button className="button primary auth-submit" disabled={pending}>
+        {pending ? "Acceptation…" : "Rejoindre cette entreprise"}
+      </button>
+    </form>
+  );
+}

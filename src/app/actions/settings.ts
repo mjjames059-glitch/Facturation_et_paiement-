@@ -16,7 +16,9 @@ async function currentCompany() {
 }
 
 const companySchema = z.object({
+  companyName: z.string().trim().min(2).max(120),
   legalName: z.string().trim().max(160),
+  contactEmail: z.union([z.email().max(254), z.literal("")]),
   address: z.string().trim().max(300),
   phone: z.string().trim().max(40),
   rccm: z.string().trim().max(80),
@@ -63,7 +65,9 @@ export async function updatePersonalEmailAction(_previousState: SettingsActionSt
 
 export async function updateCompanyProfileAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
   const parsed = companySchema.safeParse({
+    companyName: String(formData.get("company_name") ?? ""),
     legalName: String(formData.get("legal_name") ?? ""),
+    contactEmail: String(formData.get("contact_email") ?? "").trim().toLowerCase(),
     address: String(formData.get("address") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     rccm: String(formData.get("rccm") ?? ""),
@@ -74,7 +78,9 @@ export async function updateCompanyProfileAction(_previousState: SettingsActionS
   const context = await currentCompany();
   if (!context.companyId) return { error: "Connectez-vous avant de modifier le profil." };
   const { error } = await context.supabase.from("companies").update({
+    company_name: parsed.data.companyName,
     legal_name: parsed.data.legalName || null,
+    contact_email: parsed.data.contactEmail || null,
     address: parsed.data.address || null,
     phone: parsed.data.phone || null,
     rccm: parsed.data.rccm || null,
@@ -87,20 +93,80 @@ export async function updateCompanyProfileAction(_previousState: SettingsActionS
   return { success: "Profil entreprise enregistré." };
 }
 
+const workspacePreferencesSchema = z.object({
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  locale: z.enum(["fr-CD", "fr-FR", "en-US"]),
+  defaultCurrency: z.enum(["USD", "CDF"]),
+  invoiceDueDays: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(0).max(365)),
+  invoiceFooter: z.string().trim().max(2000),
+});
+
+export async function updateWorkspacePreferencesAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
+  const parsed = workspacePreferencesSchema.safeParse({
+    primaryColor: String(formData.get("brand_primary_color") ?? ""),
+    accentColor: String(formData.get("brand_accent_color") ?? ""),
+    locale: String(formData.get("locale") ?? ""),
+    defaultCurrency: String(formData.get("default_currency") ?? ""),
+    invoiceDueDays: String(formData.get("invoice_due_days") ?? ""),
+    invoiceFooter: String(formData.get("invoice_footer") ?? ""),
+  });
+  if (!parsed.success) return { error: "Vérifiez les couleurs, la langue, la devise et le délai de paiement." };
+
+  const context = await currentCompany();
+  if (!context.companyId) return { error: "Connectez-vous avant de modifier les préférences." };
+  const { error } = await context.supabase.from("settings").upsert({
+    company_id: context.companyId,
+    brand_primary_color: parsed.data.primaryColor,
+    brand_accent_color: parsed.data.accentColor,
+    locale: parsed.data.locale,
+    default_currency: parsed.data.defaultCurrency,
+    invoice_due_days: parsed.data.invoiceDueDays,
+    invoice_footer: parsed.data.invoiceFooter || null,
+  }, { onConflict: "company_id" });
+  if (error) {
+    console.error("Facturo workspace preferences update failed", { code: error.code });
+    return { error: "Les préférences de l’espace n’ont pas pu être enregistrées." };
+  }
+
+  revalidatePath("/parametres");
+  revalidatePath("/tableau-de-bord");
+  revalidatePath("/factures");
+  revalidatePath("/f/[token]", "page");
+  return { success: "Préférences de l’espace enregistrées." };
+}
+
 const logoSchema = z.instanceof(File)
   .refine((file) => file.size > 0 && file.size <= 2 * 1024 * 1024, "Le logo doit faire moins de 2 Mo.")
   .refine((file) => ["image/png", "image/jpeg", "image/webp"].includes(file.type), "Format accepté : PNG, JPEG ou WebP.");
 
+function imageSignatureMatches(fileType: string, bytes: Uint8Array) {
+  if (fileType === "image/png") {
+    return bytes.length >= 8 && [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => bytes[index] === byte);
+  }
+  if (fileType === "image/jpeg") {
+    return bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+  }
+  if (fileType === "image/webp") {
+    return bytes.length >= 12
+      && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF"
+      && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+  }
+  return false;
+}
+
 export async function uploadCompanyLogoAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
   const file = logoSchema.safeParse(formData.get("logo"));
   if (!file.success) return { error: file.error.issues[0]?.message ?? "Sélectionnez un fichier image valide." };
+  const bytes = new Uint8Array(await file.data.arrayBuffer());
+  if (!imageSignatureMatches(file.data.type, bytes)) return { error: "Le contenu du fichier ne correspond pas à un PNG, JPEG ou WebP valide." };
 
   const context = await currentCompany();
   if (!context.companyId) return { error: "Connectez-vous avant d’ajouter un logo." };
   const extension = file.data.type === "image/png" ? "png" : file.data.type === "image/webp" ? "webp" : "jpg";
   const path = `${context.companyId}/${globalThis.crypto.randomUUID()}.${extension}`;
   const { data: company } = await context.supabase.from("companies").select("logo_path").eq("id", context.companyId).maybeSingle();
-  const { error: uploadError } = await context.supabase.storage.from("company-logos").upload(path, new Uint8Array(await file.data.arrayBuffer()), {
+  const { error: uploadError } = await context.supabase.storage.from("company-logos").upload(path, bytes, {
     contentType: file.data.type,
     upsert: false,
   });

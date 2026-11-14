@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { InvitationRegistrationForm } from "@/components/auth-form";
+import { ExistingMemberInvitationForm, InvitationRegistrationForm } from "@/components/auth-form";
+import { signOutAction } from "@/app/actions/auth";
 
 type PageProps = { searchParams: Promise<{ token?: string }> };
 
@@ -11,11 +12,14 @@ async function InvitationContent({ searchParams }: PageProps) {
   const { token = "" } = await searchParams;
   const validToken = /^[a-f0-9]{64}$/.test(token);
   let invitation: { company_name: string; invited_email: string; invited_role: string } | null = null;
+  let currentEmail: string | null = null;
   if (validToken) {
     try {
       const supabase = await createSupabaseServerClient();
       const { data } = await supabase.rpc("lookup_company_invitation", { p_token: token });
       invitation = data?.[0] ?? null;
+      const { data: authData } = await supabase.auth.getUser();
+      currentEmail = authData.user?.email?.toLowerCase() ?? null;
     } catch {
       invitation = null;
     }
@@ -37,7 +41,11 @@ async function InvitationContent({ searchParams }: PageProps) {
           <p className="eyebrow">Invitation d’équipe</p>
           <h1>Rejoindre {invitation.company_name}</h1>
           <p className="lead">Vous êtes invité comme <b>{roleLabels[invitation.invited_role] ?? "Collaborateur"}</b>. Créez votre accès avec l’adresse à laquelle l’invitation a été envoyée.</p>
-          <InvitationRegistrationForm token={token} email={invitation.invited_email} />
+          {currentEmail === invitation.invited_email.toLowerCase()
+            ? <ExistingMemberInvitationForm token={token} />
+            : currentEmail
+              ? <><p className="auth-error" role="alert">Cette invitation est adressée à une autre adresse e-mail. Changez de compte pour continuer.</p><form action={signOutAction}><button className="button">Se déconnecter</button></form></>
+              : <InvitationRegistrationForm token={token} email={invitation.invited_email} />}
         </> : <>
           <div className="confirmation-icon" aria-hidden="true">!</div>
           <p className="eyebrow">Invitation indisponible</p>

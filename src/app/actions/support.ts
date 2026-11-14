@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { CONTACT_EMAIL } from "@/lib/contact";
-import { requireAuthenticatedCompany } from "@/lib/supabase/auth";
+import { requireAuthenticatedCompany, requirePlatformAdmin } from "@/lib/supabase/auth";
 
 export type SupportActionState = { error?: string; success?: string };
 
@@ -65,10 +64,7 @@ export async function updateSupportMessageStatusAction(
   });
   if (!parsed.success) return { error: "État de message invalide. Actualisez la page puis réessayez." };
 
-  const context = await requireAuthenticatedCompany();
-  if (context.user.email?.toLowerCase() !== CONTACT_EMAIL.toLowerCase()) {
-    return { error: "Vous n’êtes pas autorisé à gérer ces messages." };
-  }
+  const context = await requirePlatformAdmin();
 
   const { data: updatedMessage, error } = await context.supabase
     .from("support_messages")

@@ -1,6 +1,7 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { PublicInvoice } from "@/lib/public-invoice";
 import { formatMinorAmount } from "@/lib/money";
+import { getReadableTextColor } from "@/lib/branding";
 
 const styles = StyleSheet.create({
   page: { paddingTop: 42, paddingHorizontal: 44, paddingBottom: 62, color: "#14231B", fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.45 },
@@ -32,18 +33,20 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", left: 44, right: 44, bottom: 25, borderTopWidth: 1, borderTopColor: "#D8E1D3", paddingTop: 8, color: "#5B6B61", fontSize: 8, textAlign: "center" },
 });
 
-function frenchDate(value: string) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+function invoiceDate(value: string, locale: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString(locale, { day: "2-digit", month: "long", year: "numeric" });
 }
 
 const statusLabels = { sent: "Envoyée", paid: "Payée", overdue: "En retard" };
 
 export default function InvoicePdf({ data, logoUrl }: { data: PublicInvoice; logoUrl: string | null }) {
   const { invoice, company, client, lines } = data;
+  const primaryColor = company.brand_primary_color;
+  const accentColor = company.brand_accent_color;
   return (
     <Document title={`Facture ${invoice.invoice_number}`} author={company.company_name}>
       <Page size="A4" style={styles.page} wrap>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: primaryColor }]}>
           <View style={styles.issuer}>
             {logoUrl ? (
               // eslint-disable-next-line jsx-a11y/alt-text -- React-PDF Image does not expose an alt prop.
@@ -67,6 +70,7 @@ export default function InvoicePdf({ data, logoUrl }: { data: PublicInvoice; log
             <Text style={styles.strong}>{company.company_name}</Text>
             {company.address && <Text>{company.address}</Text>}
             {company.phone && <Text>{company.phone}</Text>}
+            {company.contact_email && <Text>{company.contact_email}</Text>}
             {company.rccm && <Text>RCCM : {company.rccm}</Text>}
             {company.nif && <Text>NIF : {company.nif}</Text>}
           </View>
@@ -78,13 +82,13 @@ export default function InvoicePdf({ data, logoUrl }: { data: PublicInvoice; log
           </View>
           <View style={styles.detailBlock}>
             <Text style={styles.heading}>Informations de facture</Text>
-            <Text>Émise le {frenchDate(invoice.issued_at)}</Text>
-            <Text>Échéance le {frenchDate(invoice.due_date)}</Text>
+            <Text>Émise le {invoiceDate(invoice.issued_at, company.locale)}</Text>
+            <Text>Échéance le {invoiceDate(invoice.due_date, company.locale)}</Text>
             {invoice.order_reference && <Text>Marché / bon de commande : {invoice.order_reference}</Text>}
           </View>
         </View>
 
-        <View style={styles.lineHeader} fixed>
+        <View style={[styles.lineHeader, { backgroundColor: primaryColor, color: getReadableTextColor(primaryColor) }]} fixed>
           <Text style={styles.description}>Description</Text>
           <Text style={styles.quantity}>Qté</Text>
           <Text style={styles.unitPrice}>Prix unitaire</Text>
@@ -100,13 +104,13 @@ export default function InvoicePdf({ data, logoUrl }: { data: PublicInvoice; log
         ))}
 
         <View style={styles.totalWrap}>
-          <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>Total à payer · {invoice.currency}</Text>
-            <Text style={styles.total}>{formatMinorAmount(invoice.total_amount, invoice.currency)}</Text>
+          <View style={[styles.totalCard, { backgroundColor: accentColor }]}>
+            <Text style={[styles.totalLabel, { color: getReadableTextColor(accentColor) }]}>Total à payer · {invoice.currency}</Text>
+            <Text style={[styles.total, { color: getReadableTextColor(accentColor) }]}>{formatMinorAmount(invoice.total_amount, invoice.currency)}</Text>
           </View>
         </View>
-        <Text style={styles.note}>Document commercial, non certifié par la DGI.</Text>
-        <Text style={styles.footer} fixed>{company.company_name} · {invoice.invoice_number} · Échéance : {frenchDate(invoice.due_date)}</Text>
+        <Text style={styles.note}>{company.invoice_footer || "Document commercial, non certifié par la DGI."}</Text>
+        <Text style={styles.footer} fixed>{company.company_name} · {invoice.invoice_number} · Échéance : {invoiceDate(invoice.due_date, company.locale)}</Text>
       </Page>
     </Document>
   );

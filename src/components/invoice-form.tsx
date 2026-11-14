@@ -10,12 +10,17 @@ type DraftLine = { key: string; description: string; quantity: string; price: st
 
 const initialState: InvoiceActionState = {};
 
-export default function InvoiceForm({ clients, catalog, today, loadError = false }: { clients: ClientOption[]; catalog: CatalogOption[]; today: string; loadError?: boolean }) {
+function addCalendarDays(date: string, days: number) {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+export default function InvoiceForm({ clients, catalog, today, defaultCurrency = "USD", invoiceDueDays = 30, loadError = false }: { clients: ClientOption[]; catalog: CatalogOption[]; today: string; defaultCurrency?: CurrencyCode; invoiceDueDays?: number; loadError?: boolean }) {
   const [state, formAction, pending] = useActionState(createInvoiceAction, initialState);
   const [clientId, setClientId] = useState("");
-  const [currency, setCurrency] = useState<CurrencyCode>("USD");
+  const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [issuedAt, setIssuedAt] = useState(today);
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(addCalendarDays(today, invoiceDueDays));
   const [lines, setLines] = useState<DraftLine[]>([]);
   const [freeDescription, setFreeDescription] = useState("");
   const [freePrice, setFreePrice] = useState("");

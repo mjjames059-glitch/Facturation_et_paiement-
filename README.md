@@ -34,11 +34,12 @@ Next.js 16 demande Node.js 20.9 ou plus récent. Consultez les [prérequis Next.
    ```powershell
    npx supabase login
    npx supabase link --project-ref VOTRE_PROJECT_REF
+   npx supabase migration list
    npx supabase db push --dry-run
    npx supabase db push
    ```
 
-   La commande `db push` applique les migrations du dossier `supabase/migrations` dans l’ordre. Elle crée les tables, les politiques RLS, les fonctions de numérotation et de partage, ainsi que le bucket de logos. Consultez le [guide Supabase des migrations](https://supabase.com/docs/guides/deployment/database-migrations).
+   Vérifiez l’historique distant et le résultat du dry-run avant de confirmer l’application. `db push` applique les migrations forward-only du dossier `supabase/migrations` dans l’ordre. Consultez le [guide Supabase des migrations](https://supabase.com/docs/guides/deployment/database-migrations).
 
 4. Dans **Authentication → URL Configuration**, définissez l’URL du site et ajoutez ces URL de redirection :
 
@@ -96,11 +97,27 @@ npm run build
 
 ## Structure Supabase
 
-- `companies`, `profiles` : entreprise et propriétaire du compte.
+- `companies`, `profiles`, `company_memberships` : entreprises (espaces de travail), identités utilisateur et rôles par entreprise. Un utilisateur peut appartenir à plusieurs entreprises.
 - `clients`, `catalog_items` : carnet clients et catalogue.
 - `invoices`, `invoice_lines`, `payments` : factures, lignes et paiements.
-- `settings` : taux de change.
+- `settings` : taux de change, identité visuelle, paramètres régionaux et valeurs par défaut des factures.
+- `subscription_plans`, `company_subscriptions` : forfaits, droits d’accès et abonnements par entreprise. Les entreprises existantes conservent le forfait de compatibilité illimité ; les nouvelles entreprises démarrent avec un essai de 30 jours. Aucun fournisseur de paiement n’est configuré.
+- `platform_admins`, `platform_audit_events` : autorisation explicite des administrateurs Facturo et journal des actions sensibles.
 - `waitlist_dgi` : inscriptions volontaires à la liste d’attente.
 - `src/lib/fiscal/provider.ts` : interface d’extension et adaptateur `none`.
 
 Les factures sont créées par une fonction SQL transactionnelle : l’incrément du numéro est annulé si la création échoue. Les brouillons ne sont pas accessibles par leur lien public. Les routes `/f/[token]` et `/f/[token]/pdf` n’exposent que les factures envoyées ou payées.
+
+### Initialiser l’administration Facturo
+
+Après application des migrations, créez un compte utilisateur normal, puis récupérez son **UUID Auth** dans **Supabase → Authentication → Users**. Dans le SQL Editor Supabase, accordez explicitement le rôle plateforme avec cet UUID :
+
+```sql
+insert into public.platform_admins (user_id)
+values ('REMPLACER-PAR-UUID-AUTH'::uuid)
+on conflict (user_id) do update set is_active = true;
+```
+
+Cette opération manuelle est requise pour le premier administrateur. Les rôles d’équipe ou une adresse e-mail publique ne donnent jamais accès à `/admin`. N’exposez pas la clé `service_role` dans l’application ; les variables d’environnement client nécessaires sont uniquement `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` et `NEXT_PUBLIC_APP_URL`.
+
+L’espace d’administration `/admin` permet de rechercher les entreprises, filtrer par forfait ou statut, consulter les usages et modifier un forfait ou un statut. Ces modifications sont vérifiées côté serveur et consignées dans `platform_audit_events`.

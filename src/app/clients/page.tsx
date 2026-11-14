@@ -6,12 +6,12 @@ import { requireAuthenticatedCompany } from "@/lib/supabase/auth";
 
 async function ClientsData() {
   await connection();
-  const { supabase, user, role } = await requireAuthenticatedCompany();
+  const { supabase, user, role, workspaces } = await requireAuthenticatedCompany();
   const { data, error } = await supabase.from("clients")
     .select("id, name, client_type, whatsapp_phone, email, address, nif")
     .order("name");
 
-  return <><WorkspaceHeader email={user.email ?? ""} role={role} /><ClientsScreen clients={data ?? []} loadError={Boolean(error)} canEdit={["owner", "manager", "collaborator"].includes(role)} /></>;
+  return <><WorkspaceHeader email={user.email ?? ""} role={role} workspaces={workspaces} /><ClientsScreen clients={data ?? []} loadError={Boolean(error)} canEdit={["owner", "manager", "collaborator"].includes(role)} /></>;
 }
 
 export default function ClientsPage() {

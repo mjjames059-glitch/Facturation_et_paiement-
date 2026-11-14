@@ -14,10 +14,15 @@ export const publicInvoiceSchema = z.object({
   company: z.object({
     company_name: z.string(),
     logo_path: z.string().nullable(),
+    contact_email: z.string().nullable(),
     address: z.string().nullable(),
     phone: z.string().nullable(),
     rccm: z.string().nullable(),
     nif: z.string().nullable(),
+    brand_primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    brand_accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    locale: z.string(),
+    invoice_footer: z.string().nullable(),
   }),
   client: z.object({
     name: z.string(),

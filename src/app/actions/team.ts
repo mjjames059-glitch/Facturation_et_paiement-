@@ -59,18 +59,8 @@ const invitedSignupSchema = z.object({
 });
 
 export async function acceptTeamInvitationAction(_previousState: TeamActionState, formData: FormData): Promise<TeamActionState> {
-  if (formData.get("legal_consent") !== "on") {
-    return { error: "Vous devez accepter la politique de confidentialité et les conditions d’utilisation." };
-  }
-
-  const parsed = invitedSignupSchema.safeParse({
-    token: String(formData.get("token") ?? ""),
-    email: String(formData.get("email") ?? "").trim().toLowerCase(),
-    displayName: String(formData.get("display_name") ?? "").trim(),
-    password: String(formData.get("password") ?? ""),
-    legalConsent: formData.get("legal_consent") === "on",
-  });
-  if (!parsed.success) return { error: "Vérifiez le nom et le mot de passe (8 caractères minimum)." };
+  const token = z.string().regex(/^[a-f0-9]{64}$/).safeParse(String(formData.get("token") ?? ""));
+  if (!token.success) return { error: "Cette invitation est invalide ou expirée." };
 
   let supabase;
   try {
@@ -78,6 +68,30 @@ export async function acceptTeamInvitationAction(_previousState: TeamActionState
   } catch {
     return { error: "La connexion à Facturo est indisponible. Réessayez dans un instant." };
   }
+
+  const { data: currentAuth, error: currentAuthError } = await supabase.auth.getUser();
+  if (currentAuthError) return { error: "Votre session n’a pas pu être vérifiée. Reconnectez-vous puis réessayez." };
+  if (currentAuth.user) {
+    const { error } = await supabase.rpc("accept_company_invitation", { p_token: token.data });
+    if (error) {
+      console.error("Facturo existing member invitation acceptance failed", { code: error.code });
+      return { error: "Cette invitation ne correspond pas à votre adresse, est expirée ou n’est plus disponible." };
+    }
+    redirect("/tableau-de-bord");
+  }
+
+  if (formData.get("legal_consent") !== "on") {
+    return { error: "Vous devez accepter la politique de confidentialité et les conditions d’utilisation." };
+  }
+
+  const parsed = invitedSignupSchema.safeParse({
+    token: token.data,
+    email: String(formData.get("email") ?? "").trim().toLowerCase(),
+    displayName: String(formData.get("display_name") ?? "").trim(),
+    password: String(formData.get("password") ?? ""),
+    legalConsent: formData.get("legal_consent") === "on",
+  });
+  if (!parsed.success) return { error: "Vérifiez le nom et le mot de passe (8 caractères minimum)." };
 
   const { data: invitationRows, error: invitationError } = await supabase.rpc("lookup_company_invitation", { p_token: parsed.data.token });
   const invitation = invitationRows?.[0];

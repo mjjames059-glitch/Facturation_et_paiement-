@@ -1,17 +1,12 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { redirect } from "next/navigation";
-import WorkspaceHeader from "@/components/workspace-header";
+import PlatformAdminHeader from "@/components/platform-admin-header";
 import SupportInbox from "@/components/support-inbox";
-import { CONTACT_EMAIL } from "@/lib/contact";
-import { requireAuthenticatedCompany } from "@/lib/supabase/auth";
+import { requirePlatformAdmin } from "@/lib/supabase/auth";
 
 async function SupportMessagesData() {
   await connection();
-  const context = await requireAuthenticatedCompany();
-  if (context.user.email?.toLowerCase() !== CONTACT_EMAIL.toLowerCase()) {
-    redirect("/tableau-de-bord");
-  }
+  const context = await requirePlatformAdmin();
 
   const { data, error } = await context.supabase
     .from("support_messages")
@@ -21,7 +16,7 @@ async function SupportMessagesData() {
 
   return (
     <>
-      <WorkspaceHeader email={context.user.email} role={context.role} />
+      <PlatformAdminHeader email={context.user.email ?? ""} />
       <SupportInbox messages={data ?? []} loadError={Boolean(error)} />
     </>
   );
