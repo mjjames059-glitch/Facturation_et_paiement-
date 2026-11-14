@@ -136,18 +136,41 @@ export async function updateWorkspacePreferencesAction(_previousState: SettingsA
 
   const context = await currentCompany();
   if (!context.companyId) return { error: "Connectez-vous avant de modifier les préférences." };
-  const { error } = await context.supabase.from("settings").upsert({
-    company_id: context.companyId,
+  const [{ data: role, error: roleError }, { data: hasBranding, error: entitlementError }] = await Promise.all([
+    context.supabase.rpc("current_company_role"),
+    context.supabase.rpc("current_company_has_entitlement", { p_entitlement: "branding" }),
+  ]);
+  if (roleError || entitlementError) {
+    console.error("Facturo workspace preferences access check failed", {
+      role: roleError?.code,
+      entitlement: entitlementError?.code,
+    });
+    return { error: "Impossible de vérifier les droits de modification. Rechargez la page et réessayez." };
+  }
+  if (role !== "owner" && role !== "manager") {
+    return { error: "Seul le propriétaire ou le gestionnaire de l’entreprise peut modifier ces préférences." };
+  }
+  if (!hasBranding) {
+    return { error: "Votre forfait ne permet pas de modifier l’identité visuelle. Contactez l’administrateur Facturo pour changer de forfait." };
+  }
+
+  const { data: updatedSettings, error } = await context.supabase.from("settings").update({
     brand_primary_color: parsed.data.primaryColor,
     brand_accent_color: parsed.data.accentColor,
     locale: parsed.data.locale,
     default_currency: parsed.data.defaultCurrency,
     invoice_due_days: parsed.data.invoiceDueDays,
     invoice_footer: parsed.data.invoiceFooter || null,
-  }, { onConflict: "company_id" });
+  }).eq("company_id", context.companyId).select("company_id").maybeSingle();
   if (error) {
     console.error("Facturo workspace preferences update failed", { code: error.code });
-    return { error: "Les préférences de l’espace n’ont pas pu être enregistrées." };
+    if (error.code === "42501") {
+      return { error: "Supabase a refusé la modification. Vérifiez que votre abonnement inclut l’identité visuelle et que vous êtes propriétaire ou gestionnaire." };
+    }
+    return { error: "Les préférences de l’espace n’ont pas pu être enregistrées. Réessayez ou contactez le support si le problème persiste." };
+  }
+  if (!updatedSettings) {
+    return { error: "Les paramètres de cette entreprise sont introuvables. Contactez le support pour les rétablir." };
   }
 
   revalidatePath("/parametres");

@@ -1,7 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateCompanyProfileAction, updateExchangeRateAction, updatePersonalEmailAction, updatePersonalProfileAction, updateWorkspacePreferencesAction, uploadCompanyLogoAction, type SettingsActionState } from "@/app/actions/settings";
+import { formatMinorAmount } from "@/lib/money";
+import { getReadableTextColor } from "@/lib/branding";
 import ThemePreferenceControl from "@/components/theme-preference-control";
 import type { ThemePreference } from "@/lib/theme";
 
@@ -26,6 +28,64 @@ type WorkspacePreferences = {
 
 const initialState: SettingsActionState = {};
 
+function InvoicePreferencesPreview({
+  companyName,
+  logoUrl,
+  preferences,
+}: {
+  companyName: string;
+  logoUrl: string | null;
+  preferences: WorkspacePreferences;
+}) {
+  const isEnglish = preferences.locale === "en-US";
+  const primaryTextColor = getReadableTextColor(preferences.brand_primary_color);
+  const accentTextColor = getReadableTextColor(preferences.brand_accent_color);
+
+  return (
+    <aside className="invoice-preferences-preview" aria-live="polite">
+      <div className="invoice-preferences-preview-heading">
+        <div>
+          <h3>Aperçu de la facture</h3>
+          <p>Les changements s’affichent ici sans créer de facture.</p>
+        </div>
+        <span className="preview-badge">Aperçu non enregistré</span>
+      </div>
+      <article className="invoice-preview-paper" style={{ borderTopColor: preferences.brand_primary_color }}>
+        <header className="invoice-preview-header">
+          <div className="invoice-preview-company">
+            {logoUrl
+              ? <span className="invoice-preview-logo" role="img" aria-label={`Logo de ${companyName}`} style={{ backgroundImage: `url("${logoUrl}")` }} />
+              : <span className="invoice-preview-logo invoice-preview-logo-placeholder">Logo</span>}
+            <div>
+              <strong>{companyName || (isEnglish ? "Your company" : "Votre entreprise")}</strong>
+              <small>{isEnglish ? "Commercial document" : "Document commercial"}</small>
+            </div>
+          </div>
+          <div className="invoice-preview-number">
+            <strong style={{ color: preferences.brand_primary_color }}>{isEnglish ? "INVOICE" : "FACTURE"}</strong>
+            <small>F-0001</small>
+          </div>
+        </header>
+        <div className="invoice-preview-parties">
+          <div><small>{isEnglish ? "BILLED TO" : "FACTURÉ À"}</small><strong>{isEnglish ? "Example client" : "Client exemple"}</strong></div>
+          <div><small>{isEnglish ? "PAYMENT TERM" : "DÉLAI DE PAIEMENT"}</small><strong>{preferences.invoice_due_days} {isEnglish ? "days" : "jours"}</strong></div>
+        </div>
+        <div className="invoice-preview-lines">
+          <div className="invoice-preview-line-header" style={{ backgroundColor: preferences.brand_primary_color, color: primaryTextColor }}>
+            <span>{isEnglish ? "Description" : "Description"}</span><span>{isEnglish ? "Amount" : "Montant"}</span>
+          </div>
+          <div className="invoice-preview-line"><span>{isEnglish ? "Consulting service" : "Prestation de service"} · 1 unité</span><strong>{formatMinorAmount("125000", preferences.default_currency)}</strong></div>
+        </div>
+        <div className="invoice-preview-total" style={{ backgroundColor: preferences.brand_accent_color, color: accentTextColor }}>
+          <span>{isEnglish ? "TOTAL TO PAY" : "TOTAL À PAYER"}</span>
+          <strong>{formatMinorAmount("125000", preferences.default_currency)}</strong>
+        </div>
+        <p className="invoice-preview-footer">{preferences.invoice_footer || (isEnglish ? "Commercial document." : "Document commercial, non certifié par la DGI.")}</p>
+      </article>
+    </aside>
+  );
+}
+
 export default function SettingsScreen({ company, logoUrl, exchangeRate, preferences, loadError, canManage, role, email, personalProfile, themePreference }: { company: CompanySettings; logoUrl: string | null; exchangeRate: string; preferences: WorkspacePreferences; loadError: boolean; canManage: boolean; role: string; email: string; personalProfile: { display_name: string | null; phone: string | null }; themePreference: ThemePreference }) {
   const [personalState, personalAction, personalPending] = useActionState(updatePersonalProfileAction, initialState);
   const [emailState, emailAction, emailPending] = useActionState(updatePersonalEmailAction, initialState);
@@ -33,6 +93,7 @@ export default function SettingsScreen({ company, logoUrl, exchangeRate, prefere
   const [preferencesState, preferencesAction, preferencesPending] = useActionState(updateWorkspacePreferencesAction, initialState);
   const [logoState, logoAction, logoPending] = useActionState(uploadCompanyLogoAction, initialState);
   const [rateState, rateAction, ratePending] = useActionState(updateExchangeRateAction, initialState);
+  const [previewPreferences, setPreviewPreferences] = useState(preferences);
 
   return (
     <div className="workspace-wrap">
@@ -92,18 +153,19 @@ export default function SettingsScreen({ company, logoUrl, exchangeRate, prefere
         <p className="muted">Ces préférences sont propres à cet espace et apparaissent sur les factures partagées et leurs PDF.</p>
         <form action={preferencesAction}>
           <div className="grid-two">
-            <div><label htmlFor="brand-primary">Couleur principale</label><input id="brand-primary" name="brand_primary_color" type="color" defaultValue={preferences.brand_primary_color} /></div>
-            <div><label htmlFor="brand-accent">Couleur secondaire</label><input id="brand-accent" name="brand_accent_color" type="color" defaultValue={preferences.brand_accent_color} /></div>
-            <div><label htmlFor="workspace-locale">Langue et format de date</label><select id="workspace-locale" name="locale" defaultValue={preferences.locale}><option value="fr-CD">Français — RDC</option><option value="fr-FR">Français — France</option><option value="en-US">English — US</option></select></div>
-            <div><label htmlFor="default-currency">Devise par défaut des factures</label><select id="default-currency" name="default_currency" defaultValue={preferences.default_currency}><option value="USD">Dollar (USD)</option><option value="CDF">Franc congolais (CDF)</option></select></div>
-            <div><label htmlFor="invoice-due-days">Délai de paiement par défaut (jours)</label><input id="invoice-due-days" name="invoice_due_days" type="number" min="0" max="365" step="1" defaultValue={preferences.invoice_due_days} required /></div>
+            <div><label htmlFor="brand-primary">Couleur principale</label><input id="brand-primary" name="brand_primary_color" type="color" value={previewPreferences.brand_primary_color} onChange={(event) => setPreviewPreferences((current) => ({ ...current, brand_primary_color: event.target.value }))} /></div>
+            <div><label htmlFor="brand-accent">Couleur secondaire</label><input id="brand-accent" name="brand_accent_color" type="color" value={previewPreferences.brand_accent_color} onChange={(event) => setPreviewPreferences((current) => ({ ...current, brand_accent_color: event.target.value }))} /></div>
+            <div><label htmlFor="workspace-locale">Langue et format de date</label><select id="workspace-locale" name="locale" value={previewPreferences.locale} onChange={(event) => setPreviewPreferences((current) => ({ ...current, locale: event.target.value }))}><option value="fr-CD">Français — RDC</option><option value="fr-FR">Français — France</option><option value="en-US">English — US</option></select></div>
+            <div><label htmlFor="default-currency">Devise par défaut des factures</label><select id="default-currency" name="default_currency" value={previewPreferences.default_currency} onChange={(event) => setPreviewPreferences((current) => ({ ...current, default_currency: event.target.value === "CDF" ? "CDF" : "USD" }))}><option value="USD">Dollar (USD)</option><option value="CDF">Franc congolais (CDF)</option></select></div>
+            <div><label htmlFor="invoice-due-days">Délai de paiement par défaut (jours)</label><input id="invoice-due-days" name="invoice_due_days" type="number" min="0" max="365" step="1" value={previewPreferences.invoice_due_days} onChange={(event) => setPreviewPreferences((current) => ({ ...current, invoice_due_days: Number(event.target.value) }))} required /></div>
           </div>
           <label htmlFor="invoice-footer">Texte légal ou pied de facture</label>
-          <textarea id="invoice-footer" name="invoice_footer" rows={3} maxLength={2000} defaultValue={preferences.invoice_footer} />
+          <textarea id="invoice-footer" name="invoice_footer" rows={3} maxLength={2000} value={previewPreferences.invoice_footer} onChange={(event) => setPreviewPreferences((current) => ({ ...current, invoice_footer: event.target.value }))} />
           {preferencesState.error && <p className="auth-error" role="alert">{preferencesState.error}</p>}
           {preferencesState.success && <p className="message" role="status">{preferencesState.success}</p>}
           <div className="inline-action"><button className="button primary" disabled={preferencesPending}>{preferencesPending ? "Enregistrement…" : "Enregistrer l’identité visuelle"}</button></div>
         </form>
+        <InvoicePreferencesPreview companyName={company.company_name} logoUrl={logoUrl} preferences={previewPreferences} />
       </section>
       <section className="panel">
         <h2>Taux de change</h2>
