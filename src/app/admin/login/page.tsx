@@ -55,7 +55,6 @@ async function AdminLoginContent({ searchParams }: AdminLoginPageProps) {
             <form action={signOutPlatformAdminAction}><button className="button">Se déconnecter</button></form>
           </>}
           {!signedInAsNonAdmin && <SignInForm audience="platform-admin" />}
-          <p className="auth-switch">Vous êtes client Facturo ? <Link href="/auth/sign-in">Connexion client</Link></p>
         </section>
       </div>
     </main>
