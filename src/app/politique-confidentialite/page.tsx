@@ -45,6 +45,11 @@ export default function PrivacyPolicyPage() {
           enregistrés, ainsi que les logos téléversés.
         </li>
         <li>
+          Assistance : catégorie, sujet et contenu des messages ou suggestions,
+          associés au compte, à l’adresse e-mail et à l’entreprise de l’expéditeur.
+          Ces messages sont accessibles à l’administrateur de Facturo.
+        </li>
+        <li>
           Données techniques indispensables au fonctionnement et à la sécurité
           du service, notamment les cookies de session.
         </li>
@@ -55,7 +60,8 @@ export default function PrivacyPolicyPage() {
         Nous utilisons ces données pour créer et sécuriser les comptes, fournir
         les fonctions de facturation, gérer les équipes et invitations, afficher
         les documents que l’utilisateur choisit de partager, répondre aux
-        demandes d’assistance et maintenir le service. Facturo ne vend pas les
+        demandes d’assistance et suggestions envoyées dans l’application, et
+        maintenir le service. Facturo ne vend pas les
         données personnelles et n’utilise pas les données de facturation à des
         fins publicitaires.
       </p>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/actions/auth";
 import { SiteLinks } from "@/components/site-links";
+import { CONTACT_EMAIL } from "@/lib/contact";
 
 export default function WorkspaceHeader({ email, role }: { email: string; role?: string }) {
   const pathname = usePathname();
@@ -13,6 +14,8 @@ export default function WorkspaceHeader({ email, role }: { email: string; role?:
     { href: "/clients", label: "Clients" },
     { href: "/catalogue", label: "Catalogue" },
     { href: "/parametres", label: "Paramètres" },
+    { href: "/aide", label: "Aide & FAQ" },
+    ...(email.toLowerCase() === CONTACT_EMAIL.toLowerCase() ? [{ href: "/admin/messages", label: "Messages reçus" }] : []),
     ...(["owner", "manager"].includes(role ?? "") ? [{ href: "/equipe", label: "Équipe" }] : []),
   ];
 
@@ -20,7 +23,7 @@ export default function WorkspaceHeader({ email, role }: { email: string; role?:
     <header className="workspace-header">
       <Link href="/tableau-de-bord" className="brand">Facturo<small>Facturation et suivi des paiements</small></Link>
       <nav className="workspace-nav" aria-label="Navigation de l’espace">{links.map(({ href, label }) => {
-        const active = pathname === href || (href === "/factures" && pathname.startsWith("/factures/"));
+        const active = pathname === href || (href === "/factures" && pathname.startsWith("/factures/")) || (href === "/aide" && pathname.startsWith("/aide")) || (href === "/admin/messages" && pathname.startsWith("/admin/messages"));
         return <Link key={href} href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{label}</Link>;
       })}</nav>
       <SiteLinks className="workspace-legal-nav" />
