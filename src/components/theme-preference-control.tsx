@@ -2,14 +2,16 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { updateThemePreferenceAction, type SettingsActionState } from "@/app/actions/settings";
-import type { ThemePreference } from "@/lib/theme";
+import { isThemePreference, themePreferences, type ThemePreference } from "@/lib/theme";
 
 const initialState: SettingsActionState = {};
 
 const themeLabels: Record<ThemePreference, string> = {
-  system: "Selon mon appareil",
+  facturo: "Facturo (actuel)",
   light: "Clair",
   dark: "Sombre",
+  green: "Vert",
+  violet: "Violet",
 };
 
 export function ThemeInitializer({ themePreference }: { themePreference: ThemePreference }) {
@@ -33,12 +35,13 @@ export default function ThemePreferenceControl({ themePreference }: { themePrefe
       <div className="personal-email-row">
         <select id="theme-preference" name="theme_preference" value={selectedTheme} onChange={(event) => {
           const value = event.target.value;
-          if (value === "system" || value === "light" || value === "dark") setSelectedTheme(value);
+          if (isThemePreference(value)) setSelectedTheme(value);
         }}>
-          {(Object.keys(themeLabels) as ThemePreference[]).map((theme) => <option key={theme} value={theme}>{themeLabels[theme]}</option>)}
+          {themePreferences.map((theme) => <option key={theme} value={theme}>{themeLabels[theme]}</option>)}
         </select>
         <button className="button" disabled={pending || selectedTheme === themePreference}>{pending ? "Enregistrement…" : "Enregistrer le thème"}</button>
       </div>
+      <p className="muted theme-preference-help">Facturo conserve l’apparence actuelle. Clair, sombre, vert et violet appliquent des couleurs de fond, de texte et d’accent adaptées.</p>
       {state.error && <p className="auth-error" role="alert">{state.error}</p>}
       {state.success && <p className="message" role="status">{state.success}</p>}
     </form>

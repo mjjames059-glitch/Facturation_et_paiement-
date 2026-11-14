@@ -102,6 +102,7 @@ npm run build
 - `invoices`, `invoice_lines`, `payments` : factures, lignes et paiements.
 - `settings` : taux de change, identité visuelle, paramètres régionaux et valeurs par défaut des factures.
 - `subscription_plans`, `company_subscriptions` : forfaits, droits d’accès et abonnements par entreprise. Les entreprises existantes conservent le forfait de compatibilité illimité ; les nouvelles entreprises démarrent avec un essai de 30 jours. Aucun fournisseur de paiement n’est configuré.
+- `profiles.theme_preference` : préférence de couleurs personnelle — Facturo (apparence actuelle), clair, sombre, vert ou violet. Le réglage est explicite et ne suit pas automatiquement le thème de l’appareil.
 - `platform_admins`, `platform_audit_events` : autorisation explicite des administrateurs Facturo et journal des actions sensibles.
 - `waitlist_dgi` : inscriptions volontaires à la liste d’attente.
 - `src/lib/fiscal/provider.ts` : interface d’extension et adaptateur `none`.

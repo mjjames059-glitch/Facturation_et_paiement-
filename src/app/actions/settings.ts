@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { parseExchangeRateUnits } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { themePreferences } from "@/lib/theme";
 
 export type SettingsActionState = { error?: string; success?: string };
 
@@ -51,7 +52,7 @@ export async function updatePersonalProfileAction(_previousState: SettingsAction
 }
 
 export async function updateThemePreferenceAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
-  const parsed = z.enum(["system", "light", "dark"]).safeParse(String(formData.get("theme_preference") ?? ""));
+  const parsed = z.enum(themePreferences).safeParse(String(formData.get("theme_preference") ?? ""));
   if (!parsed.success) return { error: "Choisissez un thème valide." };
 
   const context = await currentCompany();

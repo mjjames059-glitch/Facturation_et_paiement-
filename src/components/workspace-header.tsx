@@ -14,7 +14,7 @@ import { ThemeInitializer } from "@/components/theme-preference-control";
 
 const initialWorkspaceState: WorkspaceActionState = {};
 
-export default function WorkspaceHeader({ email, role, workspaces = [], themePreference = "system" }: { email: string; role?: string; workspaces?: CompanyWorkspace[]; themePreference?: ThemePreference }) {
+export default function WorkspaceHeader({ email, role, workspaces = [], themePreference = "facturo" }: { email: string; role?: string; workspaces?: CompanyWorkspace[]; themePreference?: ThemePreference }) {
   const pathname = usePathname();
   const [workspaceState, workspaceAction, switchingWorkspace] = useActionState(switchWorkspaceAction, initialWorkspaceState);
   const currentWorkspace = workspaces.find((workspace) => workspace.is_current);

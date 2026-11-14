@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { ThemePreference } from "@/lib/theme";
+import { normalizeThemePreference } from "@/lib/theme";
 
 export type CompanyWorkspace = {
   company_id: string;
@@ -54,7 +54,7 @@ export async function requireAuthenticatedCompany() {
     companyId: profile.company_id,
     role: membership.role,
     profile,
-    themePreference: profile.theme_preference as ThemePreference,
+    themePreference: normalizeThemePreference(profile.theme_preference),
     workspaces: (workspaces ?? []) as CompanyWorkspace[],
   };
 }
