@@ -59,19 +59,19 @@ export default function WorkspaceHeader({ email, role, workspaces = [], themePre
               {currentWorkspace && <span className="workspace-company-name">{currentWorkspace.company_name}</span>}
             </Link>
           </div>
-          {workspaces.length > 1 && <form action={workspaceAction} className="workspace-switcher">
+          <nav className="workspace-nav" aria-label="Navigation de l’espace">{links.map(({ href, label }) => {
+            const active = pathname === href || (href === "/factures" && pathname.startsWith("/factures/")) || (href === "/aide" && pathname.startsWith("/aide"));
+            return <Link key={href} href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{label}</Link>;
+          })}</nav>
+          <div className="workspace-user"><span>{email}</span><form action={signOutAction}><button className="button small">Se déconnecter</button></form></div>
+        </div>
+        {workspaces.length > 1 && <form action={workspaceAction} className="workspace-switcher">
             <label htmlFor="active-workspace">Changer d’espace</label>
             <div><select id="active-workspace" name="company_id" defaultValue={currentWorkspace?.company_id}>
               {workspaces.map((workspace) => <option key={workspace.company_id} value={workspace.company_id}>{workspace.company_name}</option>)}
             </select><button className="button small" disabled={switchingWorkspace}>{switchingWorkspace ? "…" : "Ouvrir"}</button></div>
             {workspaceState.error && <p className="auth-error" role="alert">{workspaceState.error}</p>}
           </form>}
-          <div className="workspace-user"><span>{email}</span><form action={signOutAction}><button className="button small">Se déconnecter</button></form></div>
-        </div>
-        <nav className="workspace-nav" aria-label="Navigation de l’espace">{links.map(({ href, label }) => {
-          const active = pathname === href || (href === "/factures" && pathname.startsWith("/factures/")) || (href === "/aide" && pathname.startsWith("/aide")) || (href === "/admin/messages" && pathname.startsWith("/admin/messages"));
-          return <Link key={href} href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{label}</Link>;
-        })}</nav>
         <SiteLinks className="workspace-legal-nav" />
       </header>
     </>

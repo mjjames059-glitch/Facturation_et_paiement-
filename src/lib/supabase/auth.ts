@@ -75,5 +75,19 @@ export async function requirePlatformAdmin() {
   }
   if (!isAdmin) redirect("/auth/sign-in?notice=unauthorized");
 
-  return { supabase, user: data.user };
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("theme_preference")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  if (profileError) {
+    console.error("Facturo platform admin theme lookup failed", { code: profileError.code });
+    throw new Error("Impossible de charger les préférences de l’administrateur.");
+  }
+
+  return {
+    supabase,
+    user: data.user,
+    themePreference: normalizeThemePreference(profile?.theme_preference),
+  };
 }

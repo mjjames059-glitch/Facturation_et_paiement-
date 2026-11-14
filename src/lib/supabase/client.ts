@@ -3,7 +3,9 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { getSupabasePublicEnv } from "./env";
 
-export function createSupabaseBrowserClient() {
+export function createSupabaseBrowserClient(detectSessionInUrl = true) {
   const { url, publishableKey } = getSupabasePublicEnv();
-  return createBrowserClient(url, publishableKey);
+  return createBrowserClient(url, publishableKey, {
+    auth: { detectSessionInUrl },
+  });
 }

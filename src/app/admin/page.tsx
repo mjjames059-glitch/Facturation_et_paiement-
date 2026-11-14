@@ -41,7 +41,7 @@ async function AdminContent({ searchParams }: AdminPageProps) {
   const companies = (companiesData ?? []) as PlatformCompany[];
   return (
     <>
-      <PlatformAdminHeader email={context.user.email ?? ""} />
+      <PlatformAdminHeader email={context.user.email ?? ""} themePreference={context.themePreference} />
       <PlatformAdminScreen
         companies={companies}
         plans={(plansData ?? []) as PlatformPlan[]}

@@ -16,7 +16,7 @@ async function SupportMessagesData() {
 
   return (
     <>
-      <PlatformAdminHeader email={context.user.email ?? ""} />
+      <PlatformAdminHeader email={context.user.email ?? ""} themePreference={context.themePreference} />
       <SupportInbox messages={data ?? []} loadError={Boolean(error)} />
     </>
   );

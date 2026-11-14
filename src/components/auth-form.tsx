@@ -16,6 +16,7 @@ export function SignInForm({ audience = "client" }: { audience?: "client" | "pla
         <input type="hidden" name="audience" value={audience} />
         <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
         <div className="signin-field"><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required /></div>
+        <p className="auth-switch signin-forgot-link"><Link href="/auth/forgot-password">Mot de passe oublié ?</Link></p>
         {state.error && <p className="auth-error" role="alert">{state.error}</p>}
         <button className="button primary auth-submit" disabled={pending}>{pending ? "Connexion…" : audience === "platform-admin" ? "Se connecter à l’administration" : "Se connecter à mon espace"}</button>
       </form>

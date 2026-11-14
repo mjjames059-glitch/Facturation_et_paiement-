@@ -5,6 +5,7 @@ Facturo est un SaaS de facturation et de suivi des paiements pour les petites et
 ## Fonctionnalités
 
 - Inscription et connexion par e-mail/mot de passe ou avec Google et Facebook via Supabase Auth.
+- Récupération du mot de passe par e-mail, limitée à deux demandes par jour, avec traitement administrateur au-delà.
 - Inscription sociale avec récupération du nom et de l’adresse e-mail, création d’un mot de passe, puis connexion explicite avant l’accès au tableau de bord.
 - Profil entreprise, logo et taux de change USD/CDF.
 - Gestion des clients et du catalogue de produits et services.
@@ -28,7 +29,7 @@ Next.js 16 demande Node.js 20.9 ou plus récent. Consultez les [prérequis Next.
 ## Créer le projet Supabase
 
 1. Créez un projet depuis le [tableau de bord Supabase](https://supabase.com/dashboard).
-2. Dans **Project Settings → API Keys**, récupérez l’URL du projet et la clé **Publishable**. Cette clé est publique et peut être utilisée par l’application ; aucune clé `service_role` n’est nécessaire.
+2. Dans **Project Settings → API Keys**, récupérez l’URL du projet et la clé **Publishable**. Cette clé est publique et peut être utilisée par l’application. La génération administrateur d’un lien de récupération nécessite également la clé **service_role**, exclusivement côté serveur.
 3. À la racine du dépôt, liez les migrations au projet :
 
    ```powershell
@@ -41,10 +42,12 @@ Next.js 16 demande Node.js 20.9 ou plus récent. Consultez les [prérequis Next.
 
    Vérifiez l’historique distant et le résultat du dry-run avant de confirmer l’application. `db push` applique les migrations forward-only du dossier `supabase/migrations` dans l’ordre. Consultez le [guide Supabase des migrations](https://supabase.com/docs/guides/deployment/database-migrations).
 
-4. Dans **Authentication → URL Configuration**, définissez l’URL du site et ajoutez ces URL de redirection :
+4. Dans **Authentication → URL Configuration**, définissez l’URL du site et ajoutez les quatre URL de redirection exactes :
 
    - `http://localhost:3000/auth/callback`
+   - `http://localhost:3000/auth/recovery`
    - `https://VOTRE-DOMAINE-VERCEL/auth/callback`
+   - `https://VOTRE-DOMAINE-VERCEL/auth/recovery`
 
 5. Vérifiez que la confirmation par e-mail est activée pour le parcours d’inscription. Après confirmation, l’utilisateur revient à la page de connexion.
 6. Dans **Authentication → Sign In / Providers**, activez Google et/ou Facebook et renseignez les identifiants de vos applications. Pour Facebook, autorisez l’accès à l’adresse e-mail et utilisez l’URL de callback Supabase affichée dans la configuration du fournisseur. Facturo demande les permissions `email` et `public_profile`.
@@ -67,9 +70,10 @@ Puis renseignez :
 NEXT_PUBLIC_SUPABASE_URL=https://VOTRE-PROJET.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=VOTRE-CLE-PUBLISHABLE
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+SUPABASE_SERVICE_ROLE_KEY=VOTRE-CLE-SERVICE-ROLE
 ```
 
-`NEXT_PUBLIC_APP_URL` doit être l’adresse publique de l’application pour que les e-mails de confirmation reviennent au bon endroit. N’ajoutez jamais de clé secrète dans une variable `NEXT_PUBLIC_*`.
+`NEXT_PUBLIC_APP_URL` doit être l’adresse publique de l’application pour que les e-mails de confirmation et de récupération reviennent au bon endroit. `SUPABASE_SERVICE_ROLE_KEY` est uniquement utilisée côté serveur pour générer les liens à usage unique depuis l’administration. Ajoutez-la dans `.env.local` et dans les variables secrètes Vercel ; ne la transmettez jamais au navigateur, ne la préfixez jamais par `NEXT_PUBLIC_` et ne la commitez pas.
 
 ## Lancer l’application
 
@@ -90,9 +94,9 @@ npm run build
 ## Déploiement sur Vercel
 
 1. Importez le dépôt dans [Vercel](https://vercel.com/new).
-2. Ajoutez les trois variables de `.env.example` dans les environnements **Production**, **Preview** et, si besoin, **Development**. Pour Production, définissez `NEXT_PUBLIC_APP_URL` sur l’URL HTTPS réellement utilisée. Pour l’accès administrateur, configurez `FACTURO_ADMIN_LOGIN_KEY` avec une clé privée de 64 caractères hexadécimaux au minimum dans **Production** ; Preview est facultatif. Générez-la avec `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` et ne la commitez jamais.
+2. Ajoutez les variables de `.env.example` dans les environnements **Production**, **Preview** et, si besoin, **Development**. Pour Production, définissez `NEXT_PUBLIC_APP_URL` sur l’URL HTTPS réellement utilisée. Configurez `SUPABASE_SERVICE_ROLE_KEY` uniquement comme variable serveur secrète, sans préfixe `NEXT_PUBLIC_`. Pour l’accès administrateur, configurez aussi `FACTURO_ADMIN_LOGIN_KEY` avec une clé privée de 64 caractères hexadécimaux au minimum dans **Production** ; Preview est facultatif. Générez-la avec `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` et ne la commitez jamais.
 3. Avant le premier déploiement, liez le CLI Supabase au projet de production et appliquez les migrations avec `npx supabase db push`.
-4. Ajoutez `https://VOTRE-DOMAINE-VERCEL/auth/callback` aux URL de redirection de Supabase.
+4. Ajoutez `https://VOTRE-DOMAINE-VERCEL/auth/callback` et `https://VOTRE-DOMAINE-VERCEL/auth/recovery` aux URL de redirection de Supabase.
 5. Déployez. Vercel détecte Next.js et utilise les scripts `build` et `start` du `package.json`.
 
 ## Structure Supabase
@@ -104,6 +108,7 @@ npm run build
 - `subscription_plans`, `company_subscriptions` : forfaits, droits d’accès et abonnements par entreprise. Les entreprises existantes conservent le forfait de compatibilité illimité ; les nouvelles entreprises démarrent avec un essai de 30 jours. Aucun fournisseur de paiement n’est configuré.
 - `profiles.theme_preference` : préférence de couleurs personnelle — Facturo (apparence actuelle), clair, sombre, vert ou violet. Le réglage est explicite et ne suit pas automatiquement le thème de l’appareil.
 - `platform_admins`, `platform_audit_events` : autorisation explicite des administrateurs Facturo et journal des actions sensibles.
+- `password_recovery_requests` : quota journalier et demandes de récupération en attente, visibles uniquement par l’administration plateforme.
 - `waitlist_dgi` : inscriptions volontaires à la liste d’attente.
 - `src/lib/fiscal/provider.ts` : interface d’extension et adaptateur `none`.
 
