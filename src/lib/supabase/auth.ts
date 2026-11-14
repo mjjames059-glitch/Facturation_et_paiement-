@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { ThemePreference } from "@/lib/theme";
 
 export type CompanyWorkspace = {
   company_id: string;
@@ -22,7 +23,7 @@ export async function requireAuthenticatedCompany() {
     redirect("/auth/confirmation?status=session");
   }
 
-  const { data: profile, error: profileError } = await supabase.from("profiles").select("company_id, role, display_name, phone").eq("user_id", data.user.id).maybeSingle();
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("company_id, role, display_name, phone, theme_preference").eq("user_id", data.user.id).maybeSingle();
   if (profileError || !profile?.company_id) {
     console.error("Facturo dashboard profile check failed", { code: profileError?.code ?? "no_profile" });
     redirect("/auth/confirmation?status=profile");
@@ -53,6 +54,7 @@ export async function requireAuthenticatedCompany() {
     companyId: profile.company_id,
     role: membership.role,
     profile,
+    themePreference: profile.theme_preference as ThemePreference,
     workspaces: (workspaces ?? []) as CompanyWorkspace[],
   };
 }
@@ -63,7 +65,7 @@ export async function requirePlatformAdmin() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
-    redirect("/admin/login");
+    redirect("/auth/sign-in");
   }
 
   const { data: isAdmin, error: adminError } = await supabase.rpc("is_platform_admin");
@@ -71,7 +73,7 @@ export async function requirePlatformAdmin() {
     console.error("Facturo platform admin check failed", { code: adminError.code });
     throw new Error("Impossible de vérifier les autorisations administrateur.");
   }
-  if (!isAdmin) redirect("/admin/login?notice=unauthorized");
+  if (!isAdmin) redirect("/auth/sign-in?notice=unauthorized");
 
   return { supabase, user: data.user };
 }

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getCompanyLogoUrl } from "@/lib/supabase/storage";
 import { requireAuthenticatedCompany } from "@/lib/supabase/auth";
+import { ThemeInitializer } from "@/components/theme-preference-control";
 
 export const metadata: Metadata = {
   title: "Bienvenue dans votre espace | Facturo",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 async function WorkspaceWelcomeContent() {
   await connection();
-  const { companyId, workspaces } = await requireAuthenticatedCompany();
+  const { companyId, workspaces, themePreference } = await requireAuthenticatedCompany();
   const workspace = workspaces.find((item) => item.company_id === companyId && item.is_current);
   if (!workspace) {
     throw new Error("Impossible de trouver l’espace de travail actif après la connexion.");
@@ -22,6 +23,7 @@ async function WorkspaceWelcomeContent() {
 
   return (
     <main className="auth-shell signin-shell">
+      <ThemeInitializer themePreference={themePreference} />
       <section className="auth-card confirmation-card workspace-welcome-card">
         <Link href="/" className="brand">Facturo<small>Facturation et suivi des paiements</small></Link>
         <p className="eyebrow">Espace actif</p>

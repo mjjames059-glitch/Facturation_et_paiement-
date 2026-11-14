@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getPlatformAdminLoginPath } from "@/lib/platform-admin-login";
 import { getAppUrl } from "@/lib/app-url";
 import { getLegalConsentMetadata } from "@/lib/legal";
 
@@ -316,5 +317,5 @@ export async function signOutAction() {
 export async function signOutPlatformAdminAction() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect("/admin/login");
+  redirect(getPlatformAdminLoginPath());
 }

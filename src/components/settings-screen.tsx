@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { updateCompanyProfileAction, updateExchangeRateAction, updatePersonalEmailAction, updatePersonalProfileAction, updateWorkspacePreferencesAction, uploadCompanyLogoAction, type SettingsActionState } from "@/app/actions/settings";
+import ThemePreferenceControl from "@/components/theme-preference-control";
+import type { ThemePreference } from "@/lib/theme";
 
 type CompanySettings = {
   company_name: string;
@@ -24,7 +26,7 @@ type WorkspacePreferences = {
 
 const initialState: SettingsActionState = {};
 
-export default function SettingsScreen({ company, logoUrl, exchangeRate, preferences, loadError, canManage, role, email, personalProfile }: { company: CompanySettings; logoUrl: string | null; exchangeRate: string; preferences: WorkspacePreferences; loadError: boolean; canManage: boolean; role: string; email: string; personalProfile: { display_name: string | null; phone: string | null } }) {
+export default function SettingsScreen({ company, logoUrl, exchangeRate, preferences, loadError, canManage, role, email, personalProfile, themePreference }: { company: CompanySettings; logoUrl: string | null; exchangeRate: string; preferences: WorkspacePreferences; loadError: boolean; canManage: boolean; role: string; email: string; personalProfile: { display_name: string | null; phone: string | null }; themePreference: ThemePreference }) {
   const [personalState, personalAction, personalPending] = useActionState(updatePersonalProfileAction, initialState);
   const [emailState, emailAction, emailPending] = useActionState(updatePersonalEmailAction, initialState);
   const [profileState, profileAction, profilePending] = useActionState(updateCompanyProfileAction, initialState);
@@ -54,6 +56,7 @@ export default function SettingsScreen({ company, logoUrl, exchangeRate, prefere
           {personalState.success && <p className="message" role="status">{personalState.success}</p>}
           <div className="inline-action"><button className="button primary" disabled={personalPending}>{personalPending ? "Enregistrement…" : "Enregistrer mon profil"}</button></div>
         </form>
+        <ThemePreferenceControl themePreference={themePreference} />
       </section>
       {!canManage && <p className="context context-grey">Votre rôle vous permet de consulter l’entreprise. Seul un propriétaire ou gestionnaire peut modifier ses paramètres.</p>}
       {canManage && <>

@@ -9,10 +9,12 @@ import { SiteLinks } from "@/components/site-links";
 import { getReadableTextColor } from "@/lib/branding";
 import type { CompanyWorkspace } from "@/lib/supabase/auth";
 import { getCompanyLogoUrl } from "@/lib/supabase/storage";
+import type { ThemePreference } from "@/lib/theme";
+import { ThemeInitializer } from "@/components/theme-preference-control";
 
 const initialWorkspaceState: WorkspaceActionState = {};
 
-export default function WorkspaceHeader({ email, role, workspaces = [] }: { email: string; role?: string; workspaces?: CompanyWorkspace[] }) {
+export default function WorkspaceHeader({ email, role, workspaces = [], themePreference = "system" }: { email: string; role?: string; workspaces?: CompanyWorkspace[]; themePreference?: ThemePreference }) {
   const pathname = usePathname();
   const [workspaceState, workspaceAction, switchingWorkspace] = useActionState(switchWorkspaceAction, initialWorkspaceState);
   const currentWorkspace = workspaces.find((workspace) => workspace.is_current);
@@ -47,28 +49,31 @@ export default function WorkspaceHeader({ email, role, workspaces = [] }: { emai
   ];
 
   return (
-    <header className="workspace-header">
-      <div className="workspace-header-top">
-        <div className="workspace-branding">
-          <Link href="/tableau-de-bord" className="workspace-company-brand">
-            {currentWorkspace?.logo_path && getCompanyLogoUrl(currentWorkspace.logo_path) && <span className="workspace-logo" role="img" aria-label={`Logo de ${currentWorkspace.company_name}`} style={{ backgroundImage: `url("${getCompanyLogoUrl(currentWorkspace.logo_path)}")` }} />}
-            {currentWorkspace && <span className="workspace-company-name">{currentWorkspace.company_name}</span>}
-          </Link>
+    <>
+      <ThemeInitializer themePreference={themePreference} />
+      <header className="workspace-header">
+        <div className="workspace-header-top">
+          <div className="workspace-branding">
+            <Link href="/tableau-de-bord" className="workspace-company-brand">
+              {currentWorkspace?.logo_path && getCompanyLogoUrl(currentWorkspace.logo_path) && <span className="workspace-logo" role="img" aria-label={`Logo de ${currentWorkspace.company_name}`} style={{ backgroundImage: `url("${getCompanyLogoUrl(currentWorkspace.logo_path)}")` }} />}
+              {currentWorkspace && <span className="workspace-company-name">{currentWorkspace.company_name}</span>}
+            </Link>
+          </div>
+          {workspaces.length > 1 && <form action={workspaceAction} className="workspace-switcher">
+            <label htmlFor="active-workspace">Changer d’espace</label>
+            <div><select id="active-workspace" name="company_id" defaultValue={currentWorkspace?.company_id}>
+              {workspaces.map((workspace) => <option key={workspace.company_id} value={workspace.company_id}>{workspace.company_name}</option>)}
+            </select><button className="button small" disabled={switchingWorkspace}>{switchingWorkspace ? "…" : "Ouvrir"}</button></div>
+            {workspaceState.error && <p className="auth-error" role="alert">{workspaceState.error}</p>}
+          </form>}
+          <div className="workspace-user"><span>{email}</span><form action={signOutAction}><button className="button small">Se déconnecter</button></form></div>
         </div>
-        {workspaces.length > 1 && <form action={workspaceAction} className="workspace-switcher">
-          <label htmlFor="active-workspace">Changer d’espace</label>
-          <div><select id="active-workspace" name="company_id" defaultValue={currentWorkspace?.company_id}>
-            {workspaces.map((workspace) => <option key={workspace.company_id} value={workspace.company_id}>{workspace.company_name}</option>)}
-          </select><button className="button small" disabled={switchingWorkspace}>{switchingWorkspace ? "…" : "Ouvrir"}</button></div>
-          {workspaceState.error && <p className="auth-error" role="alert">{workspaceState.error}</p>}
-        </form>}
-        <div className="workspace-user"><span>{email}</span><form action={signOutAction}><button className="button small">Se déconnecter</button></form></div>
-      </div>
-      <nav className="workspace-nav" aria-label="Navigation de l’espace">{links.map(({ href, label }) => {
-        const active = pathname === href || (href === "/factures" && pathname.startsWith("/factures/")) || (href === "/aide" && pathname.startsWith("/aide")) || (href === "/admin/messages" && pathname.startsWith("/admin/messages"));
-        return <Link key={href} href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{label}</Link>;
-      })}</nav>
-      <SiteLinks className="workspace-legal-nav" />
-    </header>
+        <nav className="workspace-nav" aria-label="Navigation de l’espace">{links.map(({ href, label }) => {
+          const active = pathname === href || (href === "/factures" && pathname.startsWith("/factures/")) || (href === "/aide" && pathname.startsWith("/aide")) || (href === "/admin/messages" && pathname.startsWith("/admin/messages"));
+          return <Link key={href} href={href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>{label}</Link>;
+        })}</nav>
+        <SiteLinks className="workspace-legal-nav" />
+      </header>
+    </>
   );
 }

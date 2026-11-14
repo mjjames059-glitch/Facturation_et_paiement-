@@ -18,7 +18,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     color-scheme: dark;
     --bg: #101827;
     --surface: #182438;
@@ -33,6 +33,38 @@
     --chili-bg: #26365f;
     --grey-bg: #243248;
   }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #101827;
+  --surface: #182438;
+  --ink: #eef3fb;
+  --muted: #a1aec2;
+  --line: #2b3a51;
+  --leaf: #46c2c5;
+  --chili: #7894ff;
+  --spice: #f1bd5b;
+  --spice-bg: #3b321e;
+  --leaf-bg: #173a42;
+  --chili-bg: #26365f;
+  --grey-bg: #243248;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #172235;
+  --muted: #64748b;
+  --line: #dce3ec;
+  --leaf: #087e8b;
+  --chili: #3157c8;
+  --spice: #a66a08;
+  --spice-bg: #fff4d6;
+  --leaf-bg: #dff3f1;
+  --chili-bg: #e7edff;
+  --grey-bg: #edf1f6;
 }
 
 .app-shell[data-theme="dark"] {
@@ -263,6 +295,10 @@ input[type="checkbox"] { width: auto; }
 .workspace-welcome-company .workspace-logo { width: 64px; height: 64px; flex-basis: 64px; }
 .workspace-welcome-company h1 { margin: 0; overflow-wrap: anywhere; font-size: clamp(1.7rem, 5vw, 2.3rem); letter-spacing: -.035em; text-align: left; }
 .workspace-welcome-card > .lead { margin: 0 0 24px; }
+.theme-preference-form { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.theme-preference-form .personal-email-row { display: flex; align-items: center; gap: 10px; }
+.theme-preference-form select { flex: 1; min-width: 0; }
+.theme-preference-form .auth-error, .theme-preference-form .message { margin-bottom: 0; }
 .page-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .page-title-row .lead { margin-bottom: 0; }
 .grid-two.invoice-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); align-items: start; }

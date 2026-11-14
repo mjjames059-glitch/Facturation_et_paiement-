@@ -24,7 +24,7 @@ async function TeamData() {
     display_name: profileById.get(membership.user_id)?.display_name ?? null,
   }));
 
-  return <><WorkspaceHeader email={context.user.email ?? ""} role={context.role} workspaces={context.workspaces} /><TeamScreen
+  return <><WorkspaceHeader email={context.user.email ?? ""} role={context.role} workspaces={context.workspaces} themePreference={context.themePreference} /><TeamScreen
     members={members as Parameters<typeof TeamScreen>[0]["members"]}
     invitations={(invitations ?? []) as Parameters<typeof TeamScreen>[0]["invitations"]}
     role={context.role}

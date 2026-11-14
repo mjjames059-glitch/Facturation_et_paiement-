@@ -90,7 +90,7 @@ npm run build
 ## Déploiement sur Vercel
 
 1. Importez le dépôt dans [Vercel](https://vercel.com/new).
-2. Ajoutez les trois variables de `.env.example` dans les environnements **Production**, **Preview** et, si besoin, **Development**. Pour Production, définissez `NEXT_PUBLIC_APP_URL` sur l’URL HTTPS réellement utilisée.
+2. Ajoutez les trois variables de `.env.example` dans les environnements **Production**, **Preview** et, si besoin, **Development**. Pour Production, définissez `NEXT_PUBLIC_APP_URL` sur l’URL HTTPS réellement utilisée. Pour l’accès administrateur, configurez `FACTURO_ADMIN_LOGIN_KEY` avec une clé privée de 64 caractères hexadécimaux au minimum dans **Production** ; Preview est facultatif. Générez-la avec `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` et ne la commitez jamais.
 3. Avant le premier déploiement, liez le CLI Supabase au projet de production et appliquez les migrations avec `npx supabase db push`.
 4. Ajoutez `https://VOTRE-DOMAINE-VERCEL/auth/callback` aux URL de redirection de Supabase.
 5. Déployez. Vercel détecte Next.js et utilise les scripts `build` et `start` du `package.json`.
@@ -120,6 +120,6 @@ on conflict (user_id) do update set is_active = true;
 
 Cette opération manuelle est requise pour le premier administrateur. Les rôles d’équipe ou une adresse e-mail publique ne donnent jamais accès à `/admin`. N’exposez pas la clé `service_role` dans l’application ; les variables d’environnement client nécessaires sont uniquement `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` et `NEXT_PUBLIC_APP_URL`.
 
-Les clients se connectent sur `/auth/sign-in`. Les administrateurs utilisent la page séparée `/admin/login`, avec le même compte Auth dont l’UUID a été autorisé ci-dessus. L’autorisation est contrôlée côté serveur ; les utilisateurs qui n’ont pas le rôle plateforme ne peuvent pas accéder à l’administration. Une session client active doit être déconnectée avant de se connecter avec un autre compte administrateur.
+Les clients se connectent sur `/auth/sign-in`. L’administrateur utilise le lien privé `https://VOTRE-DOMAINE/admin/access/VOTRE_CLE_HEXADECIMALE`, généré à partir de la valeur `FACTURO_ADMIN_LOGIN_KEY` configurée sur le serveur. L’ancienne route `/admin/login` renvoie vers la connexion client. L’autorisation est toujours vérifiée côté serveur ; la clé du chemin ne remplace jamais le rôle `platform_admin`. Une session client active doit être déconnectée avant de se connecter avec un autre compte administrateur.
 
 L’espace d’administration `/admin` permet de rechercher les entreprises, filtrer par forfait ou statut, consulter les usages et modifier un forfait ou un statut. Ces modifications sont vérifiées côté serveur et consignées dans `platform_audit_events`.

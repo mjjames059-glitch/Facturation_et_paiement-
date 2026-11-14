@@ -6,7 +6,7 @@ import { requireAuthenticatedCompany } from "@/lib/supabase/auth";
 
 async function SettingsData() {
   await connection();
-  const { supabase, user, role, profile, workspaces } = await requireAuthenticatedCompany();
+  const { supabase, user, role, profile, workspaces, themePreference } = await requireAuthenticatedCompany();
   const [{ data: company, error: companyError }, { data: settings, error: settingsError }] = await Promise.all([
     supabase.from("companies").select("company_name, legal_name, contact_email, address, phone, rccm, nif, logo_path").maybeSingle(),
     supabase.from("settings").select("exchange_rate, brand_primary_color, brand_accent_color, locale, default_currency, invoice_due_days, invoice_footer").maybeSingle(),
@@ -15,7 +15,7 @@ async function SettingsData() {
     ? supabase.storage.from("company-logos").getPublicUrl(company.logo_path).data.publicUrl
     : null;
 
-  return <><WorkspaceHeader email={user.email ?? ""} role={role} workspaces={workspaces} /><SettingsScreen canManage={role === "owner" || role === "manager"} role={role} email={user.email ?? ""} personalProfile={{ display_name: profile.display_name, phone: profile.phone }}
+  return <><WorkspaceHeader email={user.email ?? ""} role={role} workspaces={workspaces} themePreference={themePreference} /><SettingsScreen canManage={role === "owner" || role === "manager"} role={role} email={user.email ?? ""} personalProfile={{ display_name: profile.display_name, phone: profile.phone }} themePreference={themePreference}
     company={company ?? { company_name: "Mon entreprise", legal_name: null, contact_email: null, address: null, phone: null, rccm: null, nif: null }}
     logoUrl={logoUrl}
     exchangeRate={String(settings?.exchange_rate ?? "2800").replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "")}

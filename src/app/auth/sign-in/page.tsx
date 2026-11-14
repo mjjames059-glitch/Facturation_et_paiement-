@@ -25,6 +25,8 @@ async function SignInNotice({ searchParams }: PageProps) {
       ? "Votre espace Facturo est créé. Connectez-vous avec l’adresse e-mail de votre compte social et le mot de passe que vous venez de définir."
       : notice === "exists"
         ? "Un espace existe déjà avec ce compte. Connectez-vous pour le retrouver."
+        : notice === "unauthorized"
+          ? "Cette session ne dispose pas des droits administrateur de Facturo."
         : null;
 
   return noticeMessage ? <p className="message" role="status">{noticeMessage}</p> : null;
@@ -47,7 +49,6 @@ export default function SignInPage(props: PageProps) {
           <p className="lead">Connectez-vous à votre espace Facturo.</p>
           <Suspense fallback={null}><SignInNotice {...props} /></Suspense>
           <SignInForm />
-          <p className="auth-switch admin-login-link">Vous gérez la plateforme Facturo ? <Link href="/admin/login">Connexion administrateur</Link></p>
           <p className="signin-privacy">Vos données restent liées à votre espace professionnel.</p>
           <SiteLinks className="auth-legal-nav" />
         </section>

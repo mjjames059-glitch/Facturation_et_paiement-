@@ -50,6 +50,26 @@ export async function updatePersonalProfileAction(_previousState: SettingsAction
   return { success: "Votre profil personnel a été enregistré." };
 }
 
+export async function updateThemePreferenceAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
+  const parsed = z.enum(["system", "light", "dark"]).safeParse(String(formData.get("theme_preference") ?? ""));
+  if (!parsed.success) return { error: "Choisissez un thème valide." };
+
+  const context = await currentCompany();
+  if (!context.companyId) return { error: "Connectez-vous avant de modifier votre thème." };
+  const { data: userData, error: authError } = await context.supabase.auth.getUser();
+  if (authError || !userData.user) return { error: "Votre session a expiré. Reconnectez-vous puis réessayez." };
+
+  const { error } = await context.supabase.from("profiles")
+    .update({ theme_preference: parsed.data })
+    .eq("user_id", userData.user.id);
+  if (error) {
+    console.error("Facturo theme preference update failed", { code: error.code });
+    return { error: "Le thème n’a pas pu être enregistré. Vérifiez que la dernière migration Supabase est appliquée." };
+  }
+  revalidatePath("/parametres");
+  return { success: "Votre préférence de thème a été enregistrée." };
+}
+
 export async function updatePersonalEmailAction(_previousState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
   const parsedEmail = z.email().max(254).safeParse(String(formData.get("email") ?? "").trim().toLowerCase());
   if (!parsedEmail.success) return { error: "Saisissez une adresse e-mail valide." };

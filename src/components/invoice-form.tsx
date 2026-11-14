@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { createInvoiceAction, type InvoiceActionState } from "@/app/actions/invoices";
-import { formatMinorAmount, humanPriceFromMinor, lineTotalMinor, parseMoneyToMinorUnits, type CurrencyCode } from "@/lib/money";
+import { formatMinorAmount, humanPriceFromMinor, lineTotalMinor, parseMoneyToMinorUnits, parseQuantityToMilliUnits, type CurrencyCode } from "@/lib/money";
 
 type ClientOption = { id: string; name: string; client_type: "b2b" | "b2a" | "b2c" };
 type CatalogOption = { id: string; name: string; price_amount: string | number; currency: CurrencyCode; unit: string };
@@ -31,14 +31,19 @@ export default function InvoiceForm({ clients, catalog, today, defaultCurrency =
   const matchingCatalog = useMemo(() => catalog.filter((item) => item.currency === currency), [catalog, currency]);
   const total = lines.reduce((sum, line) => {
     const price = parseMoneyToMinorUnits(line.price, currency);
-    return price === null ? sum : sum + lineTotalMinor(price, line.quantity);
+    const quantity = parseQuantityToMilliUnits(line.quantity);
+    return price === null || quantity === null || quantity <= BigInt(0) ? sum : sum + lineTotalMinor(price, line.quantity);
   }, BigInt(0));
+  const hasInvalidQuantity = lines.some((line) => {
+    const quantity = parseQuantityToMilliUnits(line.quantity);
+    return quantity === null || quantity <= BigInt(0);
+  });
 
   function addCatalogItem(item: CatalogOption) {
     setLines((current) => [...current, {
       key: globalThis.crypto.randomUUID(),
       description: item.name,
-      quantity: "1",
+      quantity: "",
       price: humanPriceFromMinor(item.price_amount, currency),
       unit: item.unit,
       catalog_item_id: item.id,
@@ -58,7 +63,7 @@ export default function InvoiceForm({ clients, catalog, today, defaultCurrency =
     setLines((current) => [...current, {
       key: globalThis.crypto.randomUUID(),
       description: freeDescription.trim(),
-      quantity: "1",
+      quantity: "",
       price: freePrice,
       unit: freeUnit.trim() || "unité",
       catalog_item_id: "",
@@ -111,10 +116,11 @@ export default function InvoiceForm({ clients, catalog, today, defaultCurrency =
             <h2>Lignes de la facture</h2>
             {lines.length ? lines.map((line) => {
               const unitPrice = parseMoneyToMinorUnits(line.price, currency);
-              const lineTotal = unitPrice === null ? null : lineTotalMinor(unitPrice, line.quantity);
+              const quantity = parseQuantityToMilliUnits(line.quantity);
+              const lineTotal = unitPrice === null || quantity === null || quantity <= BigInt(0) ? null : lineTotalMinor(unitPrice, line.quantity);
               return <div className="editable-invoice-line" key={line.key}>
                 <input aria-label="Description" value={line.description} onChange={(event) => updateLine(line.key, "description", event.target.value)} maxLength={200} />
-                <input aria-label="Quantité" type="number" min="0.001" step="0.001" value={line.quantity} onChange={(event) => updateLine(line.key, "quantity", event.target.value)} />
+                <input aria-label="Quantité" type="number" min="0.001" step="0.001" value={line.quantity} onChange={(event) => updateLine(line.key, "quantity", event.target.value)} placeholder="Qté" required />
                 <input aria-label="Prix unitaire" inputMode="decimal" value={line.price} onChange={(event) => updateLine(line.key, "price", event.target.value)} />
                 <span className="line-total">{lineTotal === null ? "—" : formatMinorAmount(lineTotal, currency)}</span>
                 <button className="remove" type="button" aria-label="Retirer la ligne" onClick={() => setLines((current) => current.filter((item) => item.key !== line.key))}>×</button>
@@ -122,9 +128,9 @@ export default function InvoiceForm({ clients, catalog, today, defaultCurrency =
             }) : <p className="empty">Rien d’ajouté. Choisissez un article du catalogue ou ajoutez une ligne libre.</p>}
             <div className="total"><span>Total</span><span>{formatMinorAmount(total, currency)}</span></div>
             <p className="note">Document commercial, non certifié par la DGI.</p>
-            {(!clientId || !dueDate || lines.length === 0) && <p className="form-requirements" role="status">Pour enregistrer : choisissez un client, indiquez la date d’échéance et ajoutez au moins une ligne.</p>}
+            {(!clientId || !dueDate || lines.length === 0 || hasInvalidQuantity) && <p className="form-requirements" role="status">Pour enregistrer : choisissez un client, indiquez la date d’échéance, ajoutez une ligne et saisissez sa quantité.</p>}
             {state.error && <p className="auth-error" role="alert">{state.error}</p>}
-            <div className="actions"><button className="button primary" disabled={pending || lines.length === 0 || !dueDate}>{pending ? "Enregistrement…" : "Enregistrer le brouillon"}</button></div>
+            <div className="actions"><button className="button primary" disabled={pending || lines.length === 0 || !dueDate || hasInvalidQuantity}>{pending ? "Enregistrement…" : "Enregistrer le brouillon"}</button></div>
           </section>
         </div>
       </form>
