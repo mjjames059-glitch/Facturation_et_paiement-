@@ -23,7 +23,10 @@ async function AdminContent({ searchParams }: AdminPageProps) {
       p_limit: 50,
       p_offset: page * 50,
     }),
-    context.supabase.from("subscription_plans").select("id, name").eq("is_active", true).order("id"),
+    context.supabase
+      .from("subscription_plans")
+      .select("id, name, is_active, max_members, max_clients, max_catalog_items, max_monthly_invoices, max_daily_invoices")
+      .order("id"),
     context.supabase.rpc("list_platform_audit_events", { p_limit: 50 }),
   ]);
   if (companiesError || plansError || auditError) {

@@ -97,6 +97,7 @@ export async function createInvoiceAction(_previousState: InvoiceActionState, fo
     if (error.code === "PGRST202" || error.code === "42883") {
       return { error: "La fonction de création de facture est introuvable dans Supabase. Appliquez les migrations du dossier supabase/migrations, puis réessayez." };
     }
+    if (error.code === "P0001") return { error: "Votre abonnement est suspendu, expiré ou a atteint son quota de factures. Contactez l’administrateur Facturo pour mettre à jour le forfait." };
     if (error.code === "42501") return { error: "Votre session ou votre profil d’entreprise n’est plus valide. Reconnectez-vous puis réessayez." };
     if (error.code === "23503") return { error: "Le client ou l’article choisi est introuvable ou n’appartient pas à votre entreprise. Actualisez la page et réessayez." };
     if (error.code === "22023" || error.code === "22P02") return { error: "Les données de la facture sont invalides. Vérifiez les dates, les quantités et les prix." };
