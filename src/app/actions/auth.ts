@@ -190,33 +190,7 @@ export async function startOAuthRegistrationAction(_previousState: AuthActionSta
   const provider = z.enum(["google", "facebook"]).safeParse(String(formData.get("provider") ?? ""));
   if (!provider.success) return { error: "Choisissez Google ou Facebook pour continuer." };
 
-  let supabase;
-  try {
-    supabase = await createSupabaseServerClient();
-  } catch {
-    return { error: "Supabase n’est pas configuré. Réessayez dans un instant." };
-  }
-
-  const appUrl = getAppUrl();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: provider.data,
-    options: {
-      redirectTo: new URL("/auth/callback", appUrl).toString(),
-      ...(provider.data === "facebook" ? { scopes: "email,public_profile" } : {}),
-    },
-  });
-  if (error || !data.url) {
-    return { error: "Connexion sociale indisponible. Vérifiez la configuration Google ou Facebook dans Supabase." };
-  }
-
-  (await cookies()).set("facturo_oauth_registration", "1", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 600,
-  });
-  redirect(data.url);
+  redirect(`/auth/oauth?provider=${provider.data}&mode=register`);
 }
 
 export async function signInAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
@@ -270,40 +244,6 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
 
   (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
   redirect("/tableau-de-bord");
-}
-
-async function startProviderSignIn(provider: "google" | "facebook"): Promise<AuthActionState> {
-  let supabase;
-  try { supabase = await createSupabaseServerClient(); }
-  catch { return { error: "Supabase n’est pas configuré." }; }
-  const appUrl = getAppUrl();
-  let authorizationUrl: string | null = null;
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: new URL("/auth/callback", appUrl).toString(),
-        ...(provider === "facebook" ? { scopes: "email,public_profile" } : {}),
-      },
-    });
-    if (error) return { error: "Connexion sociale indisponible. Vérifiez sa configuration dans Supabase." };
-    authorizationUrl = data.url;
-  } catch (error) {
-    console.error(`Facturo ${provider} sign-in could not start`, error);
-    return { error: "Le service de connexion sociale est momentanément indisponible. Réessayez dans un instant." };
-  }
-  if (!authorizationUrl) return { error: "Connexion sociale indisponible. Vérifiez sa configuration dans Supabase." };
-  redirect(authorizationUrl);
-}
-
-export async function signInWithGoogleAction(_previousState: AuthActionState): Promise<AuthActionState> {
-  void _previousState;
-  return startProviderSignIn("google");
-}
-
-export async function signInWithFacebookAction(_previousState: AuthActionState): Promise<AuthActionState> {
-  void _previousState;
-  return startProviderSignIn("facebook");
 }
 
 export async function signOutAction() {

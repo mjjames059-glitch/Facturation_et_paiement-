@@ -15,6 +15,8 @@ async function ConfirmationContent({ searchParams }: PageProps) {
   const hasProblem = linkProblem || oauthProblem || profileProblem || sessionProblem;
   const oauthMessage = reason === "provider"
     ? "Le fournisseur social a refusé ou interrompu la demande. Recommencez et acceptez la connexion."
+    : reason === "start"
+      ? "Facturo n’a pas pu démarrer la connexion sociale. Vérifiez la configuration du fournisseur dans Supabase, puis réessayez."
     : reason === "missing_email"
       ? "Facebook n’a pas transmis d’adresse e-mail. Autorisez le partage de l’adresse dans Facebook, ou créez votre compte avec votre adresse e-mail."
       : reason === "redirect_not_allowed"
