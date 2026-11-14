@@ -109,7 +109,7 @@ h1 { margin: 0 0 4px; font-size: 1.7rem; letter-spacing: -.02em; }
 .stat small { display: block; color: var(--muted); margin-top: 8px; }
 .stat span { color: var(--muted); font-size: .9rem; }
 .stat.big { border-color: var(--ink); background: var(--ink); color: var(--bg); }
-.stat.big span, .stat.big small { color: rgba(255, 255, 255, 0.8); }
+.stat.big span, .stat.big small { color: var(--bg); opacity: .8; }
 .dashboard-overview { overflow: hidden; }
 .section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
 .distribution-wrap { display: grid; gap: 14px; }
@@ -123,14 +123,14 @@ h1 { margin: 0 0 4px; font-size: 1.7rem; letter-spacing: -.02em; }
 .dashboard-summary-row > div { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--grey-bg); }
 .dashboard-summary-row strong { display: block; font-size: 1.08rem; }
 .dashboard-summary-row small { display: block; margin-top: 3px; color: var(--muted); }
-.trend-chart { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; gap: 10px; min-height: 180px; }
-.trend-column { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; min-height: 160px; }
-.trend-column strong { font-size: .72rem; color: var(--muted); }
-.trend-bars { display: flex; align-items: end; gap: 4px; width: 100%; max-width: 58px; height: 96px; padding: 3px 0 0; }
+.trend-chart { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.trend-column { display: grid; grid-template-rows: 1.5rem 96px 1.5rem; justify-items: center; align-items: center; gap: 6px; min-width: 0; }
+.trend-column strong { width: 100%; overflow: hidden; color: var(--muted); font-size: .68rem; line-height: 1.5rem; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.trend-bars { display: flex; align-items: end; gap: 4px; width: 100%; max-width: 58px; height: 96px; min-height: 0; padding: 3px 0 0; overflow: hidden; }
 .trend-bars span { display: block; width: 50%; border-radius: 999px 999px 0 0; }
 .trend-total { background: linear-gradient(180deg, rgba(49, 87, 200, 0.75), rgba(49, 87, 200, 1)); }
 .trend-paid { background: linear-gradient(180deg, rgba(8, 126, 139, 0.9), rgba(8, 126, 139, 1)); }
-.trend-column small { color: var(--muted); font-size: .72rem; }
+.trend-column small { color: var(--muted); font-size: .72rem; line-height: 1.5rem; white-space: nowrap; }
 .activity-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .activity-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .activity-item:last-child { border-bottom: none; }

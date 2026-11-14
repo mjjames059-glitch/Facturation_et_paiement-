@@ -171,12 +171,14 @@ export default function DashboardScreen({
               const paidValue = BigInt(point.paid || "0");
               const totalHeight = totalValue === BigInt(0) ? 0 : Number((totalValue * 100n) / trendMax);
               const paidHeight = totalValue === BigInt(0) ? 0 : Number((paidValue * 100n) / (totalValue === BigInt(0) ? 1n : totalValue));
+              const totalBarHeight = totalValue === BigInt(0) ? 0 : Math.max(6, Math.min(100, totalHeight));
+              const paidBarHeight = paidValue === BigInt(0) ? 0 : Math.max(6, Math.min(100, paidHeight));
               return (
                 <div key={point.key} className="trend-column">
                   <strong>{formatMinorAmount(point.total, "USD")}</strong>
                   <div className="trend-bars" aria-hidden="true">
-                    <span className="trend-total" style={{ height: `${Math.max(6, totalHeight)}%` }} />
-                    <span className="trend-paid" style={{ height: `${Math.max(6, paidHeight)}%` }} />
+                    <span className="trend-total" style={{ height: `${totalBarHeight}%` }} />
+                    <span className="trend-paid" style={{ height: `${paidBarHeight}%` }} />
                   </div>
                   <small>{point.label}</small>
                 </div>
