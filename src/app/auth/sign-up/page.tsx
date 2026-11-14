@@ -34,7 +34,7 @@ async function SignUpContent({ searchParams }: PageProps) {
   if (!user) redirect("/auth/sign-in");
 
   const { data: profile, error } = await supabase.from("profiles").select("company_id").eq("user_id", user.id).maybeSingle();
-  if (profile?.company_id) redirect("/tableau-de-bord");
+  if (profile?.company_id) redirect("/auth/workspace");
   if (error) {
     console.error("Facturo OAuth registration profile lookup failed", {
       code: error.code,

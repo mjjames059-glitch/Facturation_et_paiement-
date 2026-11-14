@@ -234,7 +234,8 @@ input[type="checkbox"] { width: auto; }
 .workspace-header { display: grid; width: min(100%, 1168px); grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 0 auto; padding: 20px 24px 0; }
 .workspace-header-top { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; }
 .workspace-branding { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.workspace-branding > div { min-width: 0; }
+.workspace-company-brand { display: flex; min-width: 0; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; }
+.workspace-company-name { overflow: hidden; max-width: min(38vw, 460px); font-size: 1.05rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .workspace-logo { width: 48px; height: 48px; flex: 0 0 48px; border: 1px solid var(--line); border-radius: 10px; background-color: var(--surface); background-position: center; background-size: contain; background-repeat: no-repeat; }
 .workspace-user { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; color: var(--muted); font-size: .85rem; }
 .workspace-user span { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -247,9 +248,6 @@ input[type="checkbox"] { width: auto; }
 .workspace-legal-nav a:hover { background: var(--grey-bg); color: var(--ink); }
 .workspace-nav a:hover, .workspace-nav a.active { background: var(--grey-bg); color: var(--ink); }
 .workspace-nav a.active { font-weight: 700; box-shadow: inset 0 -2px var(--workspace-primary, var(--leaf)); }
-.workspace-identity { display: grid; gap: 2px; min-width: 0; margin-top: 3px; }
-.workspace-identity .brand { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workspace-identity strong { overflow: hidden; max-width: min(38vw, 460px); text-overflow: ellipsis; white-space: nowrap; }
 .workspace-switcher { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .workspace-switcher > div > select { min-width: 140px; }
 .workspace-switcher > div { display: flex; align-items: center; gap: 6px; }
@@ -258,6 +256,13 @@ input[type="checkbox"] { width: auto; }
 .workspace-switcher .button { padding: 7px 10px; }
 .workspace-switcher .auth-error { flex-basis: 100%; margin: 0; font-size: .82rem; }
 .workspace-header-top > .workspace-user { justify-self: end; }
+.workspace-welcome-card { text-align: center; }
+.workspace-welcome-card > .brand { display: inline-block; margin-bottom: 32px; text-align: left; }
+.workspace-welcome-card .eyebrow { margin-bottom: 10px; }
+.workspace-welcome-company { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 20px 0; }
+.workspace-welcome-company .workspace-logo { width: 64px; height: 64px; flex-basis: 64px; }
+.workspace-welcome-company h1 { margin: 0; overflow-wrap: anywhere; font-size: clamp(1.7rem, 5vw, 2.3rem); letter-spacing: -.035em; text-align: left; }
+.workspace-welcome-card > .lead { margin: 0 0 24px; }
 .page-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .page-title-row .lead { margin-bottom: 0; }
 .grid-two.invoice-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); align-items: start; }

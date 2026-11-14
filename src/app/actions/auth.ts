@@ -87,7 +87,7 @@ export async function signUpAction(_previousState: AuthActionState, formData: Fo
 
   if (data.session) {
     (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
-    redirect("/tableau-de-bord");
+    redirect("/auth/workspace");
   }
 
   redirect("/auth/confirmation");
@@ -304,7 +304,7 @@ export async function signInAction(_previousState: AuthActionState, formData: Fo
   }
 
   (await cookies()).set("facturo_seen_login", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 * 5 });
-  redirect("/tableau-de-bord");
+  redirect("/auth/workspace");
 }
 
 export async function signOutAction() {

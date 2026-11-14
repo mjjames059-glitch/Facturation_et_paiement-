@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
           : isRegistration
             ? "/auth/sign-up?mode=oauth"
             : profile?.company_id
-              ? "/tableau-de-bord"
+              ? "/auth/workspace"
               : "/auth/sign-up?mode=oauth";
     const response = NextResponse.redirect(new URL(destination, request.url));
 
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
       path: "/",
       maxAge: 0,
     });
-    if (destination === "/tableau-de-bord") {
+    if (destination === "/auth/workspace") {
       response.cookies.set("facturo_seen_login", "1", {
         httpOnly: true,
         sameSite: "lax",

@@ -50,10 +50,10 @@ export default function WorkspaceHeader({ email, role, workspaces = [] }: { emai
     <header className="workspace-header">
       <div className="workspace-header-top">
         <div className="workspace-branding">
-          {currentWorkspace?.logo_path && getCompanyLogoUrl(currentWorkspace.logo_path) && <div className="workspace-logo" role="img" aria-label={`Logo de ${currentWorkspace.company_name}`} style={{ backgroundImage: `url("${getCompanyLogoUrl(currentWorkspace.logo_path)}")` }} />}
-          <div><Link href="/tableau-de-bord" className="brand">Facturo<small>Facturation et suivi des paiements</small></Link>
-            {currentWorkspace && <div className="workspace-identity"><span>Espace actif</span><strong>{currentWorkspace.company_name}</strong></div>}
-          </div>
+          <Link href="/tableau-de-bord" className="workspace-company-brand">
+            {currentWorkspace?.logo_path && getCompanyLogoUrl(currentWorkspace.logo_path) && <span className="workspace-logo" role="img" aria-label={`Logo de ${currentWorkspace.company_name}`} style={{ backgroundImage: `url("${getCompanyLogoUrl(currentWorkspace.logo_path)}")` }} />}
+            {currentWorkspace && <span className="workspace-company-name">{currentWorkspace.company_name}</span>}
+          </Link>
         </div>
         {workspaces.length > 1 && <form action={workspaceAction} className="workspace-switcher">
           <label htmlFor="active-workspace">Changer d’espace</label>
