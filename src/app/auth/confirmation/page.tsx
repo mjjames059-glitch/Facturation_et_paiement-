@@ -47,11 +47,11 @@ async function ConfirmationContent({ searchParams }: PageProps) {
                 ? "Le retour de la connexion sociale a atteint le tableau de bord, mais le serveur ne retrouve pas la session. Vérifiez que l’adresse du site est identique du début à la fin de la connexion. Si le problème continue, consultez les journaux Vercel pour l’erreur du contrôle de session."
               : profileProblem
                 ? "Votre compte social est connecté, mais Facturo ne trouve pas son profil d’entreprise dans ce projet Supabase. Vérifiez que les migrations Facturo y sont appliquées."
-                : "Nous vous avons envoyé un lien pour confirmer votre adresse et activer votre compte Facturo."}
+                : "Si cette adresse n’est pas encore associée à un compte, Supabase doit envoyer un lien de confirmation. Une adresse déjà utilisée ne crée pas un second compte : connectez-vous avec ce compte ou demandez un nouveau lien s’il n’a pas encore été confirmé."}
         </p>
         {!hasProblem && <p className="confirmation-tip">Le message peut prendre quelques minutes. Vérifiez aussi vos courriers indésirables.</p>}
         {oauthProblem && detail && <p className="confirmation-tip">Détail Supabase : {detail}</p>}
-        {linkProblem && <ConfirmationResendForm />}
+        {(linkProblem || !hasProblem) && <ConfirmationResendForm />}
         <p className="auth-switch">Vous avez déjà confirmé votre adresse ? <Link href="/auth/sign-in">Se connecter</Link></p>
       </section>
     </main>

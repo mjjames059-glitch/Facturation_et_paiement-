@@ -73,7 +73,16 @@ export async function signUpAction(_previousState: AuthActionState, formData: Fo
   });
 
   if (error) {
+    console.error("Facturo signup failed", {
+      code: error.code ?? "unknown",
+      status: error.status,
+    });
     return { error: "Impossible de créer le compte. Vérifiez l’adresse e-mail et réessayez." };
+  }
+
+  if (!data.user) {
+    console.error("Facturo signup returned no user", { hasSession: Boolean(data.session) });
+    return { error: "Supabase n’a pas confirmé la création du compte. Réessayez ou contactez l’administrateur." };
   }
 
   if (data.session) {
@@ -98,8 +107,17 @@ export async function resendConfirmationAction(_previousState: AuthActionState, 
       email: email.data,
       options: { emailRedirectTo: new URL("/auth/callback", appUrl).toString() },
     });
-    if (error) return { error: "Impossible d’envoyer un lien pour le moment. Réessayez dans quelques minutes." };
-  } catch {
+    if (error) {
+      console.error("Facturo confirmation resend failed", {
+        code: error.code ?? "unknown",
+        status: error.status,
+      });
+      return { error: "Impossible d’envoyer un lien pour le moment. Réessayez dans quelques minutes." };
+    }
+  } catch (error) {
+    console.error("Facturo confirmation resend failed unexpectedly", {
+      name: error instanceof Error ? error.name : "unknown",
+    });
     return { error: "Impossible d’envoyer un lien pour le moment. Réessayez dans quelques minutes." };
   }
 
