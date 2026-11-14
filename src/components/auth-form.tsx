@@ -2,28 +2,16 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { completeOAuthRegistrationAction, resendConfirmationAction, signInAction, signInWithFacebookAction, signInWithGoogleAction, signUpAction, startOAuthRegistrationAction, type AuthActionState } from "@/app/actions/auth";
+import { completeOAuthRegistrationAction, resendConfirmationAction, signInAction, signUpAction, type AuthActionState } from "@/app/actions/auth";
 import { acceptTeamInvitationAction, type TeamActionState } from "@/app/actions/team";
 
 const initialState: AuthActionState = {};
 
 export function SignInForm() {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
-  const [googleState, googleAction, googlePending] = useActionState(signInWithGoogleAction, initialState);
-  const [facebookState, facebookAction, facebookPending] = useActionState(signInWithFacebookAction, initialState);
-  const oauthPending = googlePending || facebookPending;
 
   return (
     <div className="auth-form signin-form">
-      <section className="signin-provider-section" aria-label="Connexion avec Google ou Facebook">
-        <p className="signin-method-title">Connexion avec un compte social</p>
-        <div className="auth-providers">
-          <form action={googleAction}><button className="button provider-button" type="submit" disabled={oauthPending}><span className="provider-mark google-mark">G</span>{googlePending ? "Connexion…" : "Continuer avec Google"}</button></form>
-          <form action={facebookAction}><button className="button provider-button" type="submit" disabled={oauthPending}><span className="provider-mark facebook-mark">f</span>{facebookPending ? "Connexion…" : "Continuer avec Facebook"}</button></form>
-        </div>
-      </section>
-      {(googleState.error || facebookState.error) && <p className="auth-error" role="alert">{googleState.error ?? facebookState.error}</p>}
-      <div className="signin-divider"><span>ou avec votre e-mail</span></div>
       <form action={formAction} className="signin-credentials">
         <div className="signin-field"><label htmlFor="email">Adresse e-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="nom@entreprise.com" required maxLength={254} /></div>
         <div className="signin-field"><label htmlFor="password">Mot de passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required /></div>
@@ -42,8 +30,6 @@ export function SignUpForm() {
 
   return (
     <div className="auth-form">
-      <OAuthSignUpOptions legalConsentAccepted={legalConsentAccepted} />
-      <div className="signin-divider"><span>ou créez un compte avec votre e-mail</span></div>
       <form action={formAction}>
         <div className="grid-two">
         <div><label htmlFor="display-name">Votre nom</label><input id="display-name" name="display_name" autoComplete="name" maxLength={100} /></div>
@@ -82,25 +68,6 @@ export function SignUpForm() {
       </form>
     </div>
   );
-}
-
-function OAuthSignUpOptions({ legalConsentAccepted }: { legalConsentAccepted: boolean }) {
-  const [state, formAction, pending] = useActionState(startOAuthRegistrationAction, initialState);
-  return <div>
-    <form action={formAction}>
-      <input type="hidden" name="legal_consent" value={legalConsentAccepted ? "on" : ""} />
-      <div className="auth-providers">
-        <button className="button provider-button" type="submit" name="provider" value="google" disabled={pending}>
-          <span className="provider-mark google-mark">G</span>{pending ? "Connexion…" : "Continuer avec Google"}
-        </button>
-        <button className="button provider-button" type="submit" name="provider" value="facebook" disabled={pending}>
-          <span className="provider-mark facebook-mark">f</span>{pending ? "Connexion…" : "Continuer avec Facebook"}
-        </button>
-      </div>
-    </form>
-    <p className="field-hint">Google ou Facebook préremplit votre nom et votre adresse e-mail. Vous créerez un mot de passe et saisirez les informations de votre entreprise ensuite.</p>
-    {state.error && <p className="auth-error" role="alert">{state.error}</p>}
-  </div>;
 }
 
 export function OAuthCompanyRegistrationForm({ email, displayName }: { email: string; displayName: string }) {

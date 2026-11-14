@@ -128,13 +128,35 @@ export async function updateExchangeRateAction(_previousState: SettingsActionSta
 
   const context = await currentCompany();
   if (!context.companyId) return { error: "Connectez-vous avant de modifier le taux." };
-  const { error } = await context.supabase.from("settings").upsert({
-    company_id: context.companyId,
-    exchange_rate: parsed.data.replace(",", "."),
-  }, { onConflict: "company_id" });
-  if (error) return { error: "Le taux de change n’a pas pu être enregistré." };
+  const exchangeRate = parsed.data.replace(",", ".");
+  const { data: updatedSetting, error: updateError } = await context.supabase
+    .from("settings")
+    .update({ exchange_rate: exchangeRate })
+    .eq("company_id", context.companyId)
+    .select("exchange_rate")
+    .maybeSingle();
+  if (updateError) {
+    console.error("Facturo exchange rate update failed", { code: updateError.code, message: updateError.message });
+    return { error: "Le taux de change n’a pas pu être enregistré. Vérifiez vos autorisations puis réessayez." };
+  }
+
+  let savedSetting = updatedSetting;
+  if (!savedSetting) {
+    const { data: insertedSetting, error: insertError } = await context.supabase
+      .from("settings")
+      .insert({ company_id: context.companyId, exchange_rate: exchangeRate })
+      .select("exchange_rate")
+      .maybeSingle();
+    if (insertError) {
+      console.error("Facturo exchange rate insert failed", { code: insertError.code, message: insertError.message });
+      return { error: "Le taux de change n’a pas pu être enregistré. Vérifiez vos autorisations puis réessayez." };
+    }
+    savedSetting = insertedSetting;
+  }
+  if (!savedSetting) return { error: "Le taux de change n’a pas été confirmé par la base de données. Réessayez." };
 
   revalidatePath("/parametres");
   revalidatePath("/tableau-de-bord");
-  return { success: "Taux de change enregistré." };
+  const savedRate = String(savedSetting.exchange_rate).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+  return { success: `Taux enregistré : 1 USD = ${savedRate} CDF.` };
 }

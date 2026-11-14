@@ -75,7 +75,7 @@ export default function SettingsScreen({ company, logoUrl, exchangeRate, loadErr
       <section className="panel">
         <h2>Taux de change</h2>
         <p className="muted">Ce taux sert à comparer les montants CDF et USD dans le tableau de bord.</p>
-        <form action={rateAction} className="rate-form"><div><label htmlFor="exchange-rate">1 USD =</label><input id="exchange-rate" name="exchange_rate" inputMode="decimal" defaultValue={exchangeRate} required /></div><span>CDF</span>
+        <form action={rateAction} className="rate-form"><div><label htmlFor="exchange-rate">1 USD =</label><input id="exchange-rate" name="exchange_rate" type="number" inputMode="decimal" min="0.0001" max="9999999999.9999" step="0.0001" defaultValue={exchangeRate} required /></div><span>CDF</span>
           {rateState.error && <p className="auth-error" role="alert">{rateState.error}</p>}
           {rateState.success && <p className="message" role="status">{rateState.success}</p>}
           <button className="button primary" disabled={ratePending}>{ratePending ? "Enregistrement…" : "Enregistrer le taux"}</button>
